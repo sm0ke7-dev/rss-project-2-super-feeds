@@ -1,11 +1,18 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 export default function FeedBrowserPage() {
   const feeds = useQuery(api.generatedFeeds.list);
+  const removeFeed = useMutation(api.generatedFeeds.remove);
   const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
   // Derive the .convex.site URL from the .convex.cloud URL
   const siteBase = convexUrl?.replace(".convex.cloud", ".convex.site") ?? "";
+
+  async function handleDelete(id: Id<"generated_feeds">) {
+    if (!confirm("Delete this generated feed?")) return;
+    await removeFeed({ id });
+  }
 
   return (
     <div>
@@ -24,6 +31,7 @@ export default function FeedBrowserPage() {
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Items</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Generated</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Links</th>
+                <th className="text-left px-4 py-2 text-gray-600 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -41,6 +49,15 @@ export default function FeedBrowserPage() {
                          className="text-blue-600 hover:underline text-xs">XML</a>
                       <a href={htmlUrl} target="_blank" rel="noopener noreferrer"
                          className="text-blue-600 hover:underline text-xs">HTML</a>
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => handleDelete(feed._id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete feed"
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 );

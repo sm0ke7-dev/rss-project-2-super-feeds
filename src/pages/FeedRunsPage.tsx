@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Badge from "../components/Badge";
 
@@ -6,6 +6,7 @@ export default function FeedRunsPage() {
   const runs = useQuery(api.feedRuns.list);
   const offices = useQuery(api.offices.list);
   const services = useQuery(api.services.list);
+  const clearAll = useMutation(api.feedRuns.clearAll);
 
   const officeNames = new Map<string, string>();
   const serviceNames = new Map<string, string>();
@@ -14,8 +15,20 @@ export default function FeedRunsPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Feed Runs</h2>
-      <p className="text-sm text-gray-500 mb-4">Updates in real-time via Convex reactive queries.</p>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">Feed Runs</h2>
+          <p className="text-sm text-gray-500 mt-1">Updates in real-time via Convex reactive queries.</p>
+        </div>
+        {runs && runs.length > 0 && (
+          <button
+            onClick={() => { if (confirm(`Clear all ${runs.length} run logs?`)) clearAll(); }}
+            className="px-3 py-1.5 text-sm bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            Clear Logs
+          </button>
+        )}
+      </div>
       {!runs ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : runs.length === 0 ? (
