@@ -57,6 +57,8 @@ const SCOPE_COLORS: Record<string, string> = {
 
 export default function SourcesPage() {
   const sources = useQuery(api.sources.list);
+  const offices = useQuery(api.offices.list);
+  const services = useQuery(api.services.list);
   const createSource = useMutation(api.sources.create);
   const updateSource = useMutation(api.sources.update);
   const removeSource = useMutation(api.sources.remove);
@@ -291,28 +293,36 @@ export default function SourcesPage() {
                   min={1}
                 />
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Office ID <span className="text-gray-400">(Convex document ID, optional)</span>
-                </label>
-                <input
-                  value={form.officeId}
-                  onChange={e => setForm({ ...form, officeId: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                  placeholder="Leave blank if not scoped to an office"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Service ID <span className="text-gray-400">(Convex document ID, optional)</span>
-                </label>
-                <input
-                  value={form.serviceId}
-                  onChange={e => setForm({ ...form, serviceId: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                  placeholder="Leave blank if not scoped to a service"
-                />
-              </div>
+              {(form.scope === "office" || form.scope === "office-service") && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Office</label>
+                  <select
+                    value={form.officeId}
+                    onChange={e => setForm({ ...form, officeId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select an office...</option>
+                    {offices?.map(o => (
+                      <option key={o._id} value={o._id}>{o.name} ({o.city}, {o.state})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {(form.scope === "service" || form.scope === "office-service") && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Service</label>
+                  <select
+                    value={form.serviceId}
+                    onChange={e => setForm({ ...form, serviceId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a service...</option>
+                    {services?.map(s => (
+                      <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <input
                   id="source-active"
