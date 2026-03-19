@@ -1,0 +1,13 @@
+name = "aaac-feed-server"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[r2_buckets]]
+binding = "FEED_BUCKET"
+bucket_name = "aaac-super-feeds"
+# preview_bucket_name = "aaac-super-feeds-dev"  # Uncomment for local wrangler dev
+
+# Optional: custom domain route (uncomment when domain is configured)
+# [[routes]]
+# pattern = "feeds.aaacwildlife.com/*"
+# zone_name = "aaacwildlife.com"

@@ -1,0 +1,75 @@
+export interface FeedMeta {
+  officeSlug: string;
+  serviceSlug: string;
+  officeName: string;
+  serviceName: string;
+  feedBaseUrl: string; // e.g. "https://feeds.aaacwildlife.com"
+  lastBuildDate: string; // UTC string
+}
+
+export interface FeedItem {
+  guid: string;
+  title: string;
+  link: string;
+  description?: string;
+  pubDate?: string;
+  isoDate?: string;
+  videoId?: string;
+  thumbnailUrl?: string;
+  schemaType: "VideoObject" | "Article" | "DigitalDocument";
+}
+
+export function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
+  const feedUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.serviceSlug}/feed.xml`;
+  const feedHtmlUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.serviceSlug}/feed.html`;
+  const feedTitle = `AAAC ${meta.officeName} — ${meta.serviceName} Super Feed`;
+  const feedDescription = `Aggregated wildlife removal resources for ${meta.officeName}, ${meta.serviceName}.`;
+
+  const itemsXml = items.map(item => {
+    const isYouTube = !!item.videoId;
+    const guidAttr = isYouTube ? `isPermaLink="false"` : `isPermaLink="true"`;
+    const mediaThumb = item.thumbnailUrl
+      ? `<media:thumbnail url="${escapeXml(item.thumbnailUrl)}" />`
+      : "";
+    const pubDateXml = item.pubDate
+      ? `<pubDate>${escapeXml(item.pubDate)}</pubDate>`
+      : "";
+    const descriptionXml = item.description
+      ? `<description><![CDATA[${item.description}]]></description>`
+      : "";
+
+    return `
+    <item>
+      <title><![CDATA[${item.title}]]></title>
+      <link>${escapeXml(item.link)}</link>
+      <guid ${guidAttr}>${escapeXml(item.guid)}</guid>
+      ${pubDateXml}
+      ${descriptionXml}
+      ${mediaThumb}
+    </item>`;
+  }).join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+  xmlns:atom="http://www.w3.org/2005/Atom"
+  xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title><![CDATA[${feedTitle}]]></title>
+    <link>${escapeXml(feedHtmlUrl)}</link>
+    <description><![CDATA[${feedDescription}]]></description>
+    <language>en-us</language>
+    <lastBuildDate>${escapeXml(meta.lastBuildDate)}</lastBuildDate>
+    <atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />
+${itemsXml}
+  </channel>
+</rss>`;
+}
