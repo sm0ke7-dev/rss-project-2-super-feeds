@@ -3,7 +3,7 @@ import { v } from "convex/values";
 
 export const list = query({
   args: {},
-  handler: async (ctx) => await ctx.db.query("offices").withIndex("by_active").collect(),
+  handler: async (ctx) => await ctx.db.query("offices").collect(),
 });
 
 export const create = mutation({

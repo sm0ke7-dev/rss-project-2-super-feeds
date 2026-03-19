@@ -5,6 +5,14 @@ import Badge from "../components/Badge";
 export default function DashboardPage() {
   const feedRuns = useQuery(api.feedRuns.list);
   const generatedFeeds = useQuery(api.generatedFeeds.list);
+  const offices = useQuery(api.offices.list);
+  const services = useQuery(api.services.list);
+
+  // Build lookup maps for human-readable names
+  const officeNames = new Map<string, string>();
+  const serviceNames = new Map<string, string>();
+  if (offices) for (const o of offices) officeNames.set(o._id, o.name);
+  if (services) for (const s of services) serviceNames.set(s._id, s.name);
 
   // Build a map of latest run per office+service
   const latestRuns = new Map<string, NonNullable<typeof feedRuns>[0]>();
@@ -46,8 +54,8 @@ export default function DashboardPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-2 text-gray-600 font-medium">Office ID</th>
-                <th className="text-left px-4 py-2 text-gray-600 font-medium">Service ID</th>
+                <th className="text-left px-4 py-2 text-gray-600 font-medium">Office</th>
+                <th className="text-left px-4 py-2 text-gray-600 font-medium">Service</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Status</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Items</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Started</th>
@@ -56,8 +64,8 @@ export default function DashboardPage() {
             <tbody>
               {feedRuns.slice(0, 20).map(run => (
                 <tr key={run._id} className="border-t border-gray-100">
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500">{run.officeId.slice(-8)}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500">{run.serviceId.slice(-8)}</td>
+                  <td className="px-4 py-2 text-gray-900">{officeNames.get(run.officeId) ?? run.officeId.slice(-8)}</td>
+                  <td className="px-4 py-2 text-gray-900">{serviceNames.get(run.serviceId) ?? run.serviceId.slice(-8)}</td>
                   <td className="px-4 py-2"><Badge status={run.status} /></td>
                   <td className="px-4 py-2 text-gray-700">{run.itemCount ?? "—"}</td>
                   <td className="px-4 py-2 text-gray-500">{new Date(run.startedAt).toLocaleTimeString()}</td>
