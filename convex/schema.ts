@@ -104,7 +104,7 @@ export default defineSchema({
 
   feed_runs: defineTable({
     officeId: v.id("offices"),
-    locationId: v.id("locations"),
+    locationId: v.optional(v.id("locations")),
     serviceId: v.id("services"),
     status: v.union(
       v.literal("running"),
@@ -126,7 +126,7 @@ export default defineSchema({
 
   generated_feeds: defineTable({
     officeSlug: v.string(),
-    locationSlug: v.string(),
+    locationSlug: v.optional(v.string()),
     serviceSlug: v.string(),
     xmlContent: v.string(),
     htmlContent: v.string(),
