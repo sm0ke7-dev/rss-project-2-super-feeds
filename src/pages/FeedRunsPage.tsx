@@ -55,7 +55,7 @@ export default function FeedRunsPage() {
               {runs.map(run => (
                 <tr key={run._id} className="border-t border-gray-100">
                   <td className="px-4 py-2 text-gray-900">{officeNames.get(run.officeId) ?? run.officeId.slice(-8)}</td>
-                  <td className="px-4 py-2 text-gray-900">{locationNames.get(run.locationId) ?? run.locationId?.slice(-8) ?? "—"}</td>
+                  <td className="px-4 py-2 text-gray-900">{run.locationId ? (locationNames.get(run.locationId) ?? run.locationId.slice(-8)) : "—"}</td>
                   <td className="px-4 py-2 text-gray-900">{serviceNames.get(run.serviceId) ?? run.serviceId.slice(-8)}</td>
                   <td className="px-4 py-2"><Badge status={run.status} /></td>
                   <td className="px-4 py-2 text-gray-500 text-xs">{new Date(run.startedAt).toLocaleString()}</td>
