@@ -36,10 +36,12 @@ export const storeFeedItems = internalMutation({
       }
     }
     // Update lastFetchedAt and clear any previous error
-    await ctx.db.patch(sourceId, {
-      lastFetchedAt: Date.now(),
-      lastFetchError: undefined,
-    });
+    if (sourceId) {
+      await ctx.db.patch(sourceId, {
+        lastFetchedAt: Date.now(),
+        lastFetchError: undefined,
+      });
+    }
   },
 });
 

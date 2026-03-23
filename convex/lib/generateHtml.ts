@@ -2,7 +2,7 @@ import { escapeXml } from "./generateRss";
 import { dispatchJsonLd, FeedPageItem } from "./generateJsonLd";
 
 export function generateFeedHtml(
-  officeName: string,
+  _officeName: string,
   locationName: string,
   serviceName: string,
   officeSlug: string,
