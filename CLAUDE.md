@@ -16,7 +16,16 @@ Only load what's relevant to the current task. Never load coding rules for writi
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
+### Work Hierarchy
+Break non-trivial work into three levels:
+- **Milestone** = a shippable version or deliverable (contains 2-10 slices)
+- **Slice** = a demoable capability or feature (contains 1-7 tasks)
+- **Task** = a single context-window-sized unit of work
+
+Not every session needs all three levels. For small work, a flat task list is fine. Use the hierarchy when the work is big enough to benefit from structure.
+
+### Workflow
+1. **Plan First**: Write plan to `tasks/todo.md` using the hierarchy when appropriate
 2. **Verify Plan**: Check in with user before starting execution
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Decisions**: High-level summary at each step; flag any deviations from the brief

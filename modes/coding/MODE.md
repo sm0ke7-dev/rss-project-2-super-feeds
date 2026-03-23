@@ -11,17 +11,25 @@
 - Use plan mode for verification steps, not just building
 - Write detailed specs upfront to reduce ambiguity
 
-### Subagent Strategy
-- Use subagents liberally to keep main context window clean
-- Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
+### Context Isolation (Default: Subagent Per Task)
+- **Every discrete task gets its own subagent** — this is the default, not a judgment call
+- Each subagent gets a fresh context window, preventing cross-task pollution
+- Only skip subagent isolation for trivially small tasks (single-file, < 5 lines changed)
+- Main context is for orchestration, planning, and user communication — not deep execution
+- For complex problems, throw more compute at it via parallel subagents
+- **Model routing**: Default subagents to **Sonnet** to save tokens. Only use **Opus** for:
+  - Architectural planning or system design decisions
+  - Complex multi-file refactors requiring deep reasoning
+  - Debugging subtle logic errors that Sonnet struggles with
+  - When a Sonnet subagent's output quality is clearly insufficient
 
-### Verification Before Done
+### Verification Enforcement
 - Never mark a task complete without proving it works
+- **Run the project's verification gates before marking done** (see PROJECT.md `Verification Gates` section)
+- If a gate fails: fix the issue and re-run — don't skip gates or mark done with known failures
+- If no gates are defined in PROJECT.md, fall back to: build check → lint → test (whatever applies)
 - Diff behavior between main and your changes when relevant
 - Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
 
 ### Demand Elegance (Balanced)
 - For non-trivial changes: pause and ask "is there a more elegant way?"

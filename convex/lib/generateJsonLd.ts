@@ -52,6 +52,10 @@ export function buildArticleLd(input: ArticleLdInput): object {
     "@type": "Article",
     headline: input.headline,
     url: input.url,
+    publisher: {
+      "@type": "Organization",
+      name: "AAAC Wildlife Removal",
+    },
     ...(input.description ? { description: input.description } : {}),
     ...(input.datePublished ? { datePublished: input.datePublished } : {}),
   };
