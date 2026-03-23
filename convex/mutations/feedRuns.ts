@@ -4,11 +4,13 @@ import { v } from "convex/values";
 export const createFeedRun = internalMutation({
   args: {
     officeId: v.id("offices"),
+    locationId: v.id("locations"),
     serviceId: v.id("services"),
   },
-  handler: async (ctx, { officeId, serviceId }) => {
+  handler: async (ctx, { officeId, locationId, serviceId }) => {
     return await ctx.db.insert("feed_runs", {
       officeId,
+      locationId,
       serviceId,
       status: "running",
       startedAt: Date.now(),

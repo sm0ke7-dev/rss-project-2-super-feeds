@@ -9,13 +9,14 @@ import pLimit from "p-limit";
 export const aggregateFeed = internalAction({
   args: {
     officeId: v.id("offices"),
+    locationId: v.id("locations"),
     serviceId: v.id("services"),
     forceRefresh: v.optional(v.boolean()),
   },
-  handler: async (ctx, { officeId, serviceId, forceRefresh }) => {
+  handler: async (ctx, { officeId, locationId, serviceId, forceRefresh }) => {
     const runId = await ctx.runMutation(
       internal.mutations.feedRuns.createFeedRun,
-      { officeId, serviceId }
+      { officeId, locationId, serviceId }
     );
 
     try {
@@ -23,6 +24,7 @@ export const aggregateFeed = internalAction({
         internal.queries.sources.getSourcesForFeed,
         {
           officeId,
+          locationId,
           serviceId,
           nowMs: Date.now(),
           staleOnly: forceRefresh ? false : true,
@@ -52,12 +54,13 @@ export const aggregateFeed = internalAction({
       const successes = results.filter((r) => r.status === "fulfilled").length;
       const failures = results.filter((r) => r.status === "rejected").length;
       console.log(
-        `Feed ${officeId}x${serviceId}: ${successes} sources fetched, ${failures} failed`
+        `Feed ${officeId}x${locationId}x${serviceId}: ${successes} sources fetched, ${failures} failed`
       );
 
       // Generate feed files (proceeds even if some sources failed)
       await ctx.runAction(internal.actions.generateFeed.generateFeedFiles, {
         officeId,
+        locationId,
         serviceId,
       });
 
@@ -68,7 +71,7 @@ export const aggregateFeed = internalAction({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(
-        `aggregateFeed failed for ${officeId}x${serviceId}: ${errorMessage}`
+        `aggregateFeed failed for ${officeId}x${locationId}x${serviceId}: ${errorMessage}`
       );
       await ctx.runMutation(internal.mutations.feedRuns.updateFeedRun, {
         runId,
@@ -83,7 +86,7 @@ export const runAggregationCycle = internalAction({
   args: {},
   handler: async (ctx) => {
     const combinations = await ctx.runQuery(
-      internal.queries.feeds.getAllOfficeServiceCombinations
+      internal.queries.feeds.getAllFeedCombinations
     );
 
     console.log(
@@ -97,6 +100,7 @@ export const runAggregationCycle = internalAction({
       feedLimit(() =>
         ctx.runAction(internal.actions.aggregation.aggregateFeed, {
           officeId: combo.officeId as Id<"offices">,
+          locationId: combo.locationId as Id<"locations">,
           serviceId: combo.serviceId as Id<"services">,
         })
       )
@@ -115,17 +119,20 @@ export const runFullRefresh = internalAction({
   args: {},
   handler: async (ctx) => {
     const combinations = await ctx.runQuery(
-      internal.queries.feeds.getAllOfficeServiceCombinations
+      internal.queries.feeds.getAllFeedCombinations
     );
 
-    console.log(`Starting FULL REFRESH for ${combinations.length} combinations (ignoring TTL)`);
+    console.log(
+      `Starting FULL REFRESH for ${combinations.length} combinations (ignoring TTL)`
+    );
 
     const feedLimit = pLimit(5);
 
-    const tasks = combinations.map(combo =>
+    const tasks = combinations.map((combo) =>
       feedLimit(() =>
         ctx.runAction(internal.actions.aggregation.aggregateFeed, {
           officeId: combo.officeId as Id<"offices">,
+          locationId: combo.locationId as Id<"locations">,
           serviceId: combo.serviceId as Id<"services">,
           forceRefresh: true,
         })
@@ -133,8 +140,10 @@ export const runFullRefresh = internalAction({
     );
 
     const results = await Promise.allSettled(tasks);
-    const successes = results.filter(r => r.status === "fulfilled").length;
-    const failures = results.filter(r => r.status === "rejected").length;
-    console.log(`Full refresh complete: ${successes} succeeded, ${failures} failed`);
+    const successes = results.filter((r) => r.status === "fulfilled").length;
+    const failures = results.filter((r) => r.status === "rejected").length;
+    console.log(
+      `Full refresh complete: ${successes} succeeded, ${failures} failed`
+    );
   },
 });

@@ -7,12 +7,15 @@ export default function DashboardPage() {
   const generatedFeeds = useQuery(api.generatedFeeds.list);
   const offices = useQuery(api.offices.list);
   const services = useQuery(api.services.list);
+  const locations = useQuery(api.locations.list);
 
   // Build lookup maps for human-readable names
   const officeNames = new Map<string, string>();
   const serviceNames = new Map<string, string>();
+  const locationNames = new Map<string, string>();
   if (offices) for (const o of offices) officeNames.set(o._id, o.name);
   if (services) for (const s of services) serviceNames.set(s._id, s.name);
+  if (locations) for (const l of locations) locationNames.set(l._id, l.name);
 
   // Build a map of latest run per office+service
   const latestRuns = new Map<string, NonNullable<typeof feedRuns>[0]>();
@@ -55,6 +58,7 @@ export default function DashboardPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Office</th>
+                <th className="text-left px-4 py-2 text-gray-600 font-medium">Location</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Service</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Status</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Items</th>
@@ -65,6 +69,7 @@ export default function DashboardPage() {
               {feedRuns.slice(0, 20).map(run => (
                 <tr key={run._id} className="border-t border-gray-100">
                   <td className="px-4 py-2 text-gray-900">{officeNames.get(run.officeId) ?? run.officeId.slice(-8)}</td>
+                  <td className="px-4 py-2 text-gray-900">{locationNames.get(run.locationId) ?? run.locationId?.slice(-8) ?? "—"}</td>
                   <td className="px-4 py-2 text-gray-900">{serviceNames.get(run.serviceId) ?? run.serviceId.slice(-8)}</td>
                   <td className="px-4 py-2"><Badge status={run.status} /></td>
                   <td className="px-4 py-2 text-gray-700">{run.itemCount ?? "—"}</td>

@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
 type SourceType = "brand" | "authority" | "freshness";
-type SourceScope = "global" | "service" | "office" | "office-service";
+type SourceScope = "global" | "service" | "office" | "office-service" | "location" | "location-service";
 
 type Source = {
   _id: Id<"sources">;
@@ -14,6 +14,7 @@ type Source = {
   scope: SourceScope;
   officeId?: Id<"offices">;
   serviceId?: Id<"services">;
+  locationId?: Id<"locations">;
   ttlMinutes: number;
   active: boolean;
   lastFetchedAt?: number;
@@ -29,6 +30,7 @@ type FormState = {
   active: boolean;
   officeId: string;
   serviceId: string;
+  locationId: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -40,6 +42,7 @@ const EMPTY_FORM: FormState = {
   active: true,
   officeId: "",
   serviceId: "",
+  locationId: "",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -53,12 +56,15 @@ const SCOPE_COLORS: Record<string, string> = {
   service: "bg-indigo-100 text-indigo-700",
   office: "bg-orange-100 text-orange-700",
   "office-service": "bg-pink-100 text-pink-700",
+  location: "bg-emerald-100 text-emerald-700",
+  "location-service": "bg-rose-100 text-rose-700",
 };
 
 export default function SourcesPage() {
   const sources = useQuery(api.sources.list);
   const offices = useQuery(api.offices.list);
   const services = useQuery(api.services.list);
+  const locations = useQuery(api.locations.list);
   const createSource = useMutation(api.sources.create);
   const updateSource = useMutation(api.sources.update);
   const removeSource = useMutation(api.sources.remove);
@@ -81,6 +87,7 @@ export default function SourcesPage() {
       active: source.active,
       officeId: source.officeId ?? "",
       serviceId: source.serviceId ?? "",
+      locationId: source.locationId ?? "",
     });
     setModal({ mode: "edit", source });
   }
@@ -94,6 +101,7 @@ export default function SourcesPage() {
     const ttl = parseInt(form.ttlMinutes, 10) || 60;
     const officeId = form.officeId.trim() || undefined;
     const serviceId = form.serviceId.trim() || undefined;
+    const locationId = form.locationId.trim() ? (form.locationId as Id<"locations">) : undefined;
 
     if (modal?.mode === "add") {
       await createSource({
@@ -105,6 +113,7 @@ export default function SourcesPage() {
         active: form.active,
         officeId: officeId as Id<"offices"> | undefined,
         serviceId: serviceId as Id<"services"> | undefined,
+        locationId,
       });
     } else if (modal?.mode === "edit" && modal.source) {
       await updateSource({
@@ -117,6 +126,7 @@ export default function SourcesPage() {
         active: form.active,
         officeId: officeId as Id<"offices"> | undefined,
         serviceId: serviceId as Id<"services"> | undefined,
+        locationId,
       });
     }
     closeModal();
@@ -138,6 +148,7 @@ export default function SourcesPage() {
       active: !source.active,
       officeId: source.officeId,
       serviceId: source.serviceId,
+      locationId: source.locationId,
     });
   }
 
@@ -281,6 +292,8 @@ export default function SourcesPage() {
                   <option value="service">Service</option>
                   <option value="office">Office</option>
                   <option value="office-service">Office-Service</option>
+                  <option value="location">Location</option>
+                  <option value="location-service">Location-Service</option>
                 </select>
               </div>
               <div>
@@ -308,7 +321,7 @@ export default function SourcesPage() {
                   </select>
                 </div>
               )}
-              {(form.scope === "service" || form.scope === "office-service") && (
+              {(form.scope === "service" || form.scope === "office-service" || form.scope === "location-service") && (
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">Service</label>
                   <select
@@ -319,6 +332,21 @@ export default function SourcesPage() {
                     <option value="">Select a service...</option>
                     {services?.map(s => (
                       <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {(form.scope === "location" || form.scope === "location-service") && (
+                <div>
+                  <label className="block text-sm text-gray-600 mb-1">Location</label>
+                  <select
+                    value={form.locationId}
+                    onChange={e => setForm({ ...form, locationId: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a location...</option>
+                    {locations?.map(l => (
+                      <option key={l._id} value={l._id}>{l.name} ({l.slug})</option>
                     ))}
                   </select>
                 </div>

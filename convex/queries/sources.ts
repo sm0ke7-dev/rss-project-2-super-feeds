@@ -1,60 +1,90 @@
 import { internalQuery, query } from "../_generated/server";
 import { v } from "convex/values";
 
-// 4-scope source resolution with optional TTL filtering
+// 6-scope source resolution with optional TTL filtering
 export const getSourcesForFeed = internalQuery({
   args: {
     officeId: v.id("offices"),
+    locationId: v.id("locations"),
     serviceId: v.id("services"),
     nowMs: v.number(),
     staleOnly: v.optional(v.boolean()),
   },
-  handler: async (ctx, { officeId, serviceId, nowMs, staleOnly }) => {
-    const [globals, serviceScoped, officeScoped, officeServiceScoped] =
-      await Promise.all([
-        ctx.db
-          .query("sources")
-          .withIndex("by_scope", (q) => q.eq("scope", "global"))
-          .filter((q) => q.eq(q.field("active"), true))
-          .collect(),
-        ctx.db
-          .query("sources")
-          .withIndex("by_service", (q) => q.eq("serviceId", serviceId))
-          .filter((q) =>
-            q.and(
-              q.eq(q.field("scope"), "service"),
-              q.eq(q.field("active"), true)
-            )
+  handler: async (ctx, { officeId, locationId, serviceId, nowMs, staleOnly }) => {
+    const [
+      globals,
+      serviceScoped,
+      officeScoped,
+      officeServiceScoped,
+      locationScoped,
+      locationServiceScoped,
+    ] = await Promise.all([
+      ctx.db
+        .query("sources")
+        .withIndex("by_scope", (q) => q.eq("scope", "global"))
+        .filter((q) => q.eq(q.field("active"), true))
+        .collect(),
+      ctx.db
+        .query("sources")
+        .withIndex("by_service", (q) => q.eq("serviceId", serviceId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("scope"), "service"),
+            q.eq(q.field("active"), true)
           )
-          .collect(),
-        ctx.db
-          .query("sources")
-          .withIndex("by_office", (q) => q.eq("officeId", officeId))
-          .filter((q) =>
-            q.and(
-              q.eq(q.field("scope"), "office"),
-              q.eq(q.field("active"), true)
-            )
+        )
+        .collect(),
+      ctx.db
+        .query("sources")
+        .withIndex("by_office", (q) => q.eq("officeId", officeId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("scope"), "office"),
+            q.eq(q.field("active"), true)
           )
-          .collect(),
-        ctx.db
-          .query("sources")
-          .withIndex("by_office", (q) => q.eq("officeId", officeId))
-          .filter((q) =>
-            q.and(
-              q.eq(q.field("scope"), "office-service"),
-              q.eq(q.field("serviceId"), serviceId),
-              q.eq(q.field("active"), true)
-            )
+        )
+        .collect(),
+      ctx.db
+        .query("sources")
+        .withIndex("by_office", (q) => q.eq("officeId", officeId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("scope"), "office-service"),
+            q.eq(q.field("serviceId"), serviceId),
+            q.eq(q.field("active"), true)
           )
-          .collect(),
-      ]);
+        )
+        .collect(),
+      ctx.db
+        .query("sources")
+        .withIndex("by_location", (q) => q.eq("locationId", locationId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("scope"), "location"),
+            q.eq(q.field("active"), true)
+          )
+        )
+        .collect(),
+      ctx.db
+        .query("sources")
+        .withIndex("by_location", (q) => q.eq("locationId", locationId))
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("scope"), "location-service"),
+            q.eq(q.field("serviceId"), serviceId),
+            q.eq(q.field("active"), true)
+          )
+        )
+        .collect(),
+    ]);
 
     const all = [
       ...globals,
       ...serviceScoped,
       ...officeScoped,
       ...officeServiceScoped,
+      ...locationScoped,
+      ...locationServiceScoped,
     ];
 
     // Deduplicate by URL

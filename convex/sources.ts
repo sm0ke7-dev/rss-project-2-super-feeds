@@ -15,10 +15,13 @@ export const create = mutation({
       v.literal("global"),
       v.literal("service"),
       v.literal("office"),
-      v.literal("office-service")
+      v.literal("office-service"),
+      v.literal("location"),
+      v.literal("location-service")
     ),
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
+    locationId: v.optional(v.id("locations")),
     ttlMinutes: v.number(),
     active: v.boolean(),
   },
@@ -30,6 +33,7 @@ export const create = mutation({
       scope: args.scope,
       officeId: args.officeId,
       serviceId: args.serviceId,
+      locationId: args.locationId,
       ttlMinutes: args.ttlMinutes,
       active: args.active,
     });
@@ -46,10 +50,13 @@ export const update = mutation({
       v.literal("global"),
       v.literal("service"),
       v.literal("office"),
-      v.literal("office-service")
+      v.literal("office-service"),
+      v.literal("location"),
+      v.literal("location-service")
     ),
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
+    locationId: v.optional(v.id("locations")),
     ttlMinutes: v.number(),
     active: v.boolean(),
   },

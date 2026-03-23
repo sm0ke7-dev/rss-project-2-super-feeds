@@ -3,15 +3,17 @@ import { dispatchJsonLd, FeedPageItem } from "./generateJsonLd";
 
 export function generateFeedHtml(
   officeName: string,
+  locationName: string,
   serviceName: string,
   officeSlug: string,
+  locationSlug: string,
   serviceSlug: string,
   feedBaseUrl: string,
   items: FeedPageItem[]
 ): string {
-  const feedXmlUrl = `${feedBaseUrl}/feeds/${officeSlug}/${serviceSlug}/feed.xml`;
-  const pageTitle = `AAAC ${officeName} — ${serviceName} Super Feed`;
-  const metaDescription = `Aggregated wildlife removal resources for ${officeName}, ${serviceName}.`;
+  const feedXmlUrl = `${feedBaseUrl}/feeds/${officeSlug}/${locationSlug}/${serviceSlug}/feed.xml`;
+  const pageTitle = `AAAC ${locationName} — ${serviceName} Super Feed`;
+  const metaDescription = `Aggregated wildlife removal resources for ${locationName}, ${serviceName}.`;
 
   const jsonLdBlocks = items.map(item => {
     const ld = dispatchJsonLd(item);

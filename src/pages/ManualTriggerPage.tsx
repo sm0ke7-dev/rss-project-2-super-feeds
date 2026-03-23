@@ -5,8 +5,10 @@ import { api } from "../../convex/_generated/api";
 export default function ManualTriggerPage() {
   const offices = useQuery(api.offices.list);
   const services = useQuery(api.services.list);
+  const locations = useQuery(api.locations.list);
 
   const [selectedOfficeId, setSelectedOfficeId] = useState("");
+  const [selectedLocationId, setSelectedLocationId] = useState("");
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
@@ -15,11 +17,12 @@ export default function ManualTriggerPage() {
   const triggerFullRefresh = useMutation(api.mutations.admin.triggerFullRefresh);
 
   async function handleTriggerOne() {
-    if (!selectedOfficeId || !selectedServiceId) return;
+    if (!selectedOfficeId || !selectedLocationId || !selectedServiceId) return;
     setStatus("Scheduling…");
     try {
       await triggerFeed({
         officeId: selectedOfficeId as Parameters<typeof triggerFeed>[0]["officeId"],
+        locationId: selectedLocationId as Parameters<typeof triggerFeed>[0]["locationId"],
         serviceId: selectedServiceId as Parameters<typeof triggerFeed>[0]["serviceId"],
       });
       setStatus("Scheduled! Check Feed Runs tab for progress.");
@@ -59,12 +62,25 @@ export default function ManualTriggerPage() {
             <label className="block text-sm text-gray-600 mb-1">Office</label>
             <select
               value={selectedOfficeId}
-              onChange={e => setSelectedOfficeId(e.target.value)}
+              onChange={e => { setSelectedOfficeId(e.target.value); setSelectedLocationId(""); }}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
             >
               <option value="">Select office…</option>
               {offices?.map(o => (
                 <option key={o._id} value={o._id}>{o.name} ({o.slug})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Location</label>
+            <select
+              value={selectedLocationId}
+              onChange={e => setSelectedLocationId(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            >
+              <option value="">Select location…</option>
+              {locations?.filter(l => l.officeId === selectedOfficeId).map(l => (
+                <option key={l._id} value={l._id}>{l.name} ({l.slug})</option>
               ))}
             </select>
           </div>
@@ -83,7 +99,7 @@ export default function ManualTriggerPage() {
           </div>
           <button
             onClick={handleTriggerOne}
-            disabled={!selectedOfficeId || !selectedServiceId}
+            disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
           >
             Trigger Feed
@@ -93,7 +109,7 @@ export default function ManualTriggerPage() {
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-lg">
         <h3 className="font-medium text-gray-800 mb-2">Trigger All Feeds</h3>
-        <p className="text-sm text-gray-500 mb-4">Schedules a full aggregation cycle for all active office × service combinations.</p>
+        <p className="text-sm text-gray-500 mb-4">Schedules a full aggregation cycle for all active location × service combinations.</p>
         <button
           onClick={handleTriggerAll}
           className="w-full bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium py-2 rounded transition-colors"

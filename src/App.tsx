@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import TabNav, { TabId } from "./components/TabNav";
 import DashboardPage from "./pages/DashboardPage";
 import OfficesPage from "./pages/OfficesPage";
+import LocationsPage from "./pages/LocationsPage";
 import ServicesPage from "./pages/ServicesPage";
 import StaticItemsPage from "./pages/StaticItemsPage";
 import SourcesPage from "./pages/SourcesPage";
@@ -16,6 +17,7 @@ export default function App() {
   const page = {
     dashboard: <DashboardPage />,
     offices: <OfficesPage />,
+    locations: <LocationsPage />,
     services: <ServicesPage />,
     "static-items": <StaticItemsPage />,
     sources: <SourcesPage />,

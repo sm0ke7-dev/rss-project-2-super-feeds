@@ -1,7 +1,9 @@
 export interface FeedMeta {
   officeSlug: string;
+  locationSlug: string;
   serviceSlug: string;
   officeName: string;
+  locationName: string;
   serviceName: string;
   feedBaseUrl: string; // e.g. "https://feeds.aaacwildlife.com"
   lastBuildDate: string; // UTC string
@@ -29,10 +31,10 @@ export function escapeXml(str: string): string {
 }
 
 export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
-  const feedUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.serviceSlug}/feed.xml`;
-  const feedHtmlUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.serviceSlug}/feed.html`;
-  const feedTitle = `AAAC ${meta.officeName} — ${meta.serviceName} Super Feed`;
-  const feedDescription = `Aggregated wildlife removal resources for ${meta.officeName}, ${meta.serviceName}.`;
+  const feedUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.locationSlug}/${meta.serviceSlug}/feed.xml`;
+  const feedHtmlUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.locationSlug}/${meta.serviceSlug}/feed.html`;
+  const feedTitle = `AAAC ${meta.locationName} — ${meta.serviceName} Super Feed`;
+  const feedDescription = `Aggregated wildlife removal resources for ${meta.locationName}, ${meta.serviceName}.`;
 
   const itemsXml = items.map(item => {
     const isYouTube = !!item.videoId;

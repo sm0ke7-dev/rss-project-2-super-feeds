@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 
 const http = httpRouter();
 
-const FEED_PATH_RE = /^\/feeds\/([a-z0-9-]+)\/([a-z0-9-]+)\/(feed\.xml|feed\.html)$/;
+const FEED_PATH_RE = /^\/feeds\/([a-z0-9-]+)\/([a-z0-9-]+)\/([a-z0-9-]+)\/(feed\.xml|feed\.html)$/;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,10 +33,11 @@ http.route({
       return new Response("Not found", { status: 404 });
     }
 
-    const [, officeSlug, serviceSlug, filename] = match;
+    const [, officeSlug, locationSlug, serviceSlug, filename] = match;
 
     const feed = await ctx.runQuery(internal.queries.generatedFeeds.getBySlug, {
       officeSlug,
+      locationSlug,
       serviceSlug,
     });
 

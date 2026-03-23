@@ -27,6 +27,7 @@ export default function FeedBrowserPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Office</th>
+                <th className="text-left px-4 py-2 text-gray-600 font-medium">Location</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Service</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Items</th>
                 <th className="text-left px-4 py-2 text-gray-600 font-medium">Generated</th>
@@ -36,11 +37,12 @@ export default function FeedBrowserPage() {
             </thead>
             <tbody>
               {feeds.map(feed => {
-                const xmlUrl = `${siteBase}/feeds/${feed.officeSlug}/${feed.serviceSlug}/feed.xml`;
-                const htmlUrl = `${siteBase}/feeds/${feed.officeSlug}/${feed.serviceSlug}/feed.html`;
+                const xmlUrl = `${siteBase}/feeds/${feed.officeSlug}/${feed.locationSlug}/${feed.serviceSlug}/feed.xml`;
+                const htmlUrl = `${siteBase}/feeds/${feed.officeSlug}/${feed.locationSlug}/${feed.serviceSlug}/feed.html`;
                 return (
                   <tr key={feed._id} className="border-t border-gray-100">
                     <td className="px-4 py-2 font-medium text-gray-900">{feed.officeSlug}</td>
+                    <td className="px-4 py-2 text-gray-700">{feed.locationSlug}</td>
                     <td className="px-4 py-2 text-gray-700">{feed.serviceSlug}</td>
                     <td className="px-4 py-2 text-gray-700">{feed.itemCount}</td>
                     <td className="px-4 py-2 text-gray-500 text-xs">{new Date(feed.generatedAt).toLocaleString()}</td>

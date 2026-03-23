@@ -12,6 +12,16 @@ export default defineSchema({
     .index("by_slug", ["slug"])
     .index("by_active", ["active"]),
 
+  locations: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    officeId: v.id("offices"),
+    active: v.boolean(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_office", ["officeId"])
+    .index("by_active", ["active"]),
+
   services: defineTable({
     name: v.string(),
     slug: v.string(),
@@ -33,10 +43,13 @@ export default defineSchema({
       v.literal("global"),
       v.literal("service"),
       v.literal("office"),
-      v.literal("office-service")
+      v.literal("office-service"),
+      v.literal("location"),
+      v.literal("location-service")
     ),
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
+    locationId: v.optional(v.id("locations")),
     ttlMinutes: v.number(),
     active: v.boolean(),
     lastFetchedAt: v.optional(v.number()),
@@ -46,7 +59,8 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_active", ["active"])
     .index("by_office", ["officeId"])
-    .index("by_service", ["serviceId"]),
+    .index("by_service", ["serviceId"])
+    .index("by_location", ["locationId"]),
 
   static_items: defineTable({
     title: v.string(),
@@ -82,13 +96,15 @@ export default defineSchema({
     ),
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
+    locationId: v.optional(v.id("locations")),
   })
     .index("by_source", ["sourceId"])
     .index("by_guid", ["guid"])
-    .index("by_office_service", ["officeId", "serviceId"]),
+    .index("by_location_service", ["locationId", "serviceId"]),
 
   feed_runs: defineTable({
     officeId: v.id("offices"),
+    locationId: v.id("locations"),
     serviceId: v.id("services"),
     status: v.union(
       v.literal("running"),
@@ -100,7 +116,7 @@ export default defineSchema({
     startedAt: v.number(),
     completedAt: v.optional(v.number()),
   })
-    .index("by_office_service", ["officeId", "serviceId"])
+    .index("by_location_service", ["locationId", "serviceId"])
     .index("by_status", ["status"]),
 
   settings: defineTable({
@@ -110,11 +126,12 @@ export default defineSchema({
 
   generated_feeds: defineTable({
     officeSlug: v.string(),
+    locationSlug: v.string(),
     serviceSlug: v.string(),
     xmlContent: v.string(),
     htmlContent: v.string(),
     generatedAt: v.number(),
     itemCount: v.number(),
   })
-    .index("by_slugs", ["officeSlug", "serviceSlug"]),
+    .index("by_slugs", ["officeSlug", "locationSlug", "serviceSlug"]),
 });

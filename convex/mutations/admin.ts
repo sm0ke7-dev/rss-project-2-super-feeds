@@ -5,13 +5,14 @@ import { internal } from "../_generated/api";
 export const triggerFeed = mutation({
   args: {
     officeId: v.id("offices"),
+    locationId: v.id("locations"),
     serviceId: v.id("services"),
   },
-  handler: async (ctx, { officeId, serviceId }) => {
+  handler: async (ctx, { officeId, locationId, serviceId }) => {
     await ctx.scheduler.runAfter(
       0,
       internal.actions.aggregation.aggregateFeed,
-      { officeId, serviceId }
+      { officeId, locationId, serviceId }
     );
   },
 });

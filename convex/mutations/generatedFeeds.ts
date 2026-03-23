@@ -4,16 +4,20 @@ import { v } from "convex/values";
 export const upsertFeed = internalMutation({
   args: {
     officeSlug: v.string(),
+    locationSlug: v.string(),
     serviceSlug: v.string(),
     xmlContent: v.string(),
     htmlContent: v.string(),
     itemCount: v.number(),
   },
-  handler: async (ctx, { officeSlug, serviceSlug, xmlContent, htmlContent, itemCount }) => {
+  handler: async (ctx, { officeSlug, locationSlug, serviceSlug, xmlContent, htmlContent, itemCount }) => {
     const existing = await ctx.db
       .query("generated_feeds")
-      .withIndex("by_slugs", q =>
-        q.eq("officeSlug", officeSlug).eq("serviceSlug", serviceSlug)
+      .withIndex("by_slugs", (q) =>
+        q
+          .eq("officeSlug", officeSlug)
+          .eq("locationSlug", locationSlug)
+          .eq("serviceSlug", serviceSlug)
       )
       .first();
 
@@ -27,6 +31,7 @@ export const upsertFeed = internalMutation({
     } else {
       await ctx.db.insert("generated_feeds", {
         officeSlug,
+        locationSlug,
         serviceSlug,
         xmlContent,
         htmlContent,
