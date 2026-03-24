@@ -105,6 +105,14 @@ export const getSourcesForFeed = internalQuery({
   },
 });
 
+// Look up a single source by ID (used for source name labelling in feed output)
+export const getSourceById = internalQuery({
+  args: { sourceId: v.id("sources") },
+  handler: async (ctx, { sourceId }) => {
+    return await ctx.db.get(sourceId);
+  },
+});
+
 // List all sources (for admin UI)
 export const listSources = query({
   args: {},

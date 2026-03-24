@@ -67,7 +67,7 @@ export function generateFeedHtml(
   <article class="sf-item">
     ${thumbHtml}
     ${videoEmbedHtml}
-    <span class="sf-item-badge">${escapeXml(badgeLabel)}</span>
+    <span class="sf-item-badge">${escapeXml(badgeLabel)}</span>${item.sourceName ? `<span class="sf-item-source">${escapeXml(item.sourceName)}</span>` : ""}
     <h2 class="sf-item-title"><a href="${escapeXml(item.link)}">${escapeXml(item.title)}</a></h2>
     ${metaHtml}
     ${descHtml}
@@ -171,6 +171,13 @@ export function generateFeedHtml(
       padding: 2px 8px;
       border-radius: 12px;
       margin-bottom: 8px;
+    }
+
+    .sf-item-source {
+      font-size: 0.7rem;
+      color: #888;
+      margin-left: 0.5rem;
+      font-style: italic;
     }
 
     .sf-item-title {

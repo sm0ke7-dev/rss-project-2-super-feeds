@@ -69,6 +69,15 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("sources") },
   handler: async (ctx, args) => {
+    // Cascade: delete all feedItems belonging to this source before removing the source
+    const items = await ctx.db
+      .query("feedItems")
+      .withIndex("by_source", (q) => q.eq("sourceId", args.id))
+      .collect();
+    for (const item of items) {
+      await ctx.db.delete(item._id);
+    }
+
     await ctx.db.delete(args.id);
   },
 });

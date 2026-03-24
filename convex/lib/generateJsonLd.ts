@@ -73,6 +73,7 @@ export type FeedPageItem = {
   videoId?: string;
   thumbnailUrl?: string;
   schemaType: "VideoObject" | "Article" | "DigitalDocument";
+  sourceName?: string;
 };
 
 export function dispatchJsonLd(item: FeedPageItem): object {

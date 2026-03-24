@@ -35,6 +35,16 @@ export const generateFeedFiles = internalAction({
       { officeId, locationId, serviceId }
     );
 
+    // Build sourceId -> title map for labelling items in the HTML output
+    const sourceIds = [...new Set(rawItems.map(i => i.sourceId).filter(Boolean))];
+    const sourceMap = new Map<string, string>();
+    for (const sid of sourceIds) {
+      if (sid) {
+        const src = await ctx.runQuery(internal.queries.sources.getSourceById, { sourceId: sid });
+        if (src) sourceMap.set(sid, src.title);
+      }
+    }
+
     const feedItems: FeedItem[] = rawItems.map((item) => ({
       guid: item.guid,
       title: item.title,
@@ -48,7 +58,18 @@ export const generateFeedFiles = internalAction({
       schemaType: item.schemaType,
     }));
 
-    const feedPageItems: FeedPageItem[] = feedItems;
+    const feedPageItems: FeedPageItem[] = rawItems.map((item) => ({
+      guid: item.guid,
+      title: item.title,
+      link: item.link,
+      description: item.description,
+      fullContent: item.fullContent,
+      isoDate: item.isoDate,
+      videoId: item.videoId,
+      thumbnailUrl: item.thumbnailUrl,
+      schemaType: item.schemaType,
+      sourceName: item.sourceId ? sourceMap.get(item.sourceId) : undefined,
+    }));
 
     const meta: FeedMeta = {
       officeSlug: office.slug,

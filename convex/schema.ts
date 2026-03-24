@@ -102,7 +102,8 @@ export default defineSchema({
   })
     .index("by_source", ["sourceId"])
     .index("by_guid", ["guid"])
-    .index("by_location_service", ["locationId", "serviceId"]),
+    .index("by_location_service", ["locationId", "serviceId"])
+    .index("by_schema_type", ["schemaType"]),
 
   feed_runs: defineTable({
     officeId: v.id("offices"),

@@ -1,14 +1,16 @@
 import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import { Id } from "../_generated/dataModel";
 
 export const getItemsNeedingContent = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const items = await ctx.db.query("feedItems").collect();
-    return items
-      .filter(item => item.schemaType === "Article" && item.contentExtractedAt === undefined)
-      .slice(0, 10)
-      .map(item => ({ _id: item._id, link: item.link }));
+    const articles = await ctx.db
+      .query("feedItems")
+      .withIndex("by_schema_type", (q) => q.eq("schemaType", "Article"))
+      .filter((q) => q.eq(q.field("contentExtractedAt"), undefined))
+      .take(10);
+    return articles.map(item => ({ _id: item._id, link: item.link }));
   },
 });
 
@@ -109,7 +111,32 @@ export const getFeedItemsForOfficeService = internalQuery({
       )
       .collect();
 
-    const allItems = [...itemArrays.flat(), ...authorityItems];
+    // Fetch static authority documents (PDFs etc) — global scope, included in all feeds
+    const staticItems = await ctx.db.query("static_items").collect();
+
+    const staticFeedItems = staticItems.map(s => ({
+      _id: s._id as unknown as Id<"feedItems">,
+      _creationTime: s._creationTime,
+      sourceId: s.sourceId,
+      guid: s.url,
+      title: s.title,
+      link: s.url,
+      description: s.description,
+      pubDate: new Date(s.publishedAt).toUTCString(),
+      isoDate: new Date(s.publishedAt).toISOString(),
+      schemaType: "DigitalDocument" as const,
+      videoId: undefined,
+      channelId: undefined,
+      thumbnailUrl: undefined,
+      viewCount: undefined,
+      officeId: undefined,
+      serviceId: undefined,
+      locationId: undefined,
+      fullContent: undefined,
+      contentExtractedAt: undefined,
+    }));
+
+    const allItems = [...itemArrays.flat(), ...authorityItems, ...staticFeedItems];
 
     // Deduplicate by guid — keep the one with the most recent isoDate
     const guidMap = new Map<string, (typeof allItems)[0]>();
