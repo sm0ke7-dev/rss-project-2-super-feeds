@@ -14,3 +14,12 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+export const clearAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const feeds = await ctx.db.query("generated_feeds").collect();
+    for (const feed of feeds) await ctx.db.delete(feed._id);
+    return { deleted: feeds.length };
+  },
+});

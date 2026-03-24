@@ -5,6 +5,7 @@ import { Id } from "../../convex/_generated/dataModel";
 export default function FeedBrowserPage() {
   const feeds = useQuery(api.generatedFeeds.list);
   const removeFeed = useMutation(api.generatedFeeds.remove);
+  const clearAllFeeds = useMutation(api.generatedFeeds.clearAll);
   const purgeOrphaned = useMutation(api.feedItems.purgeOrphaned);
   const itemCount = useQuery(api.feedItems.count);
   const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
@@ -28,6 +29,16 @@ export default function FeedBrowserPage() {
         <h2 className="text-lg font-semibold text-gray-800">Generated Feeds ({feeds?.length ?? "…"})</h2>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-500">{itemCount ?? "…"} feed items in database</span>
+          <button
+            onClick={async () => {
+              if (!confirm(`Delete all ${feeds?.length ?? 0} generated feeds? You can regenerate them from Manual Trigger.`)) return;
+              const result = await clearAllFeeds();
+              alert(`Deleted ${result.deleted} feeds.`);
+            }}
+            className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-red-600 transition-colors"
+          >
+            Clear All Feeds
+          </button>
           <button
             onClick={handlePurge}
             className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-amber-600 transition-colors"
