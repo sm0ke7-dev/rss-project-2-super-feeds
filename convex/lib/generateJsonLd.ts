@@ -19,6 +19,7 @@ export interface ArticleLdInput {
   url: string;
   description?: string;
   datePublished?: string;
+  fullContent?: string;
 }
 
 export function buildVideoObjectLd(input: VideoObjectLdInput): object {
@@ -58,6 +59,7 @@ export function buildArticleLd(input: ArticleLdInput): object {
     },
     ...(input.description ? { description: input.description } : {}),
     ...(input.datePublished ? { datePublished: input.datePublished } : {}),
+    ...(input.fullContent ? { articleBody: input.fullContent.slice(0, 5000) } : {}),
   };
 }
 
@@ -66,6 +68,7 @@ export type FeedPageItem = {
   title: string;
   link: string;
   description?: string;
+  fullContent?: string;
   isoDate?: string;
   videoId?: string;
   thumbnailUrl?: string;
@@ -110,5 +113,6 @@ export function dispatchJsonLd(item: FeedPageItem): object {
     url: item.link,
     description: item.description,
     datePublished: item.isoDate,
+    fullContent: item.fullContent,
   });
 }

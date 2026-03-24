@@ -40,6 +40,7 @@ export const generateFeedFiles = internalAction({
       title: item.title,
       link: item.link,
       description: item.description,
+      fullContent: item.fullContent,
       pubDate: item.pubDate,
       isoDate: item.isoDate,
       videoId: item.videoId,

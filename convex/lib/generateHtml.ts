@@ -51,11 +51,9 @@ export function generateFeedHtml(
     const badgeLabel = item.schemaType === "VideoObject" ? "Video" :
                        item.schemaType === "DigitalDocument" ? "Document" : "Article";
 
-    const descHtml = item.description
-      ? `
-    <div class="sf-item-body">
-      ${escapeXml(item.description)}
-    </div>`
+    const bodyText = item.fullContent ?? item.description;
+    const descHtml = bodyText
+      ? `\n    <div class="sf-item-body">\n      ${escapeXml(bodyText)}\n    </div>`
       : "";
 
     const metaHtml = dateStr

@@ -14,6 +14,7 @@ export interface FeedItem {
   title: string;
   link: string;
   description?: string;
+  fullContent?: string;
   pubDate?: string;
   isoDate?: string;
   videoId?: string;
@@ -48,6 +49,9 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
     const descriptionXml = item.description
       ? `<description><![CDATA[${item.description}]]></description>`
       : "";
+    const contentEncodedXml = item.fullContent
+      ? `<content:encoded><![CDATA[${item.fullContent}]]></content:encoded>`
+      : "";
 
     return `
     <item>
@@ -56,6 +60,7 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
       <guid ${guidAttr}>${escapeXml(item.guid)}</guid>
       ${pubDateXml}
       ${descriptionXml}
+      ${contentEncodedXml}
       ${mediaThumb}
     </item>`;
   }).join("\n");
@@ -63,7 +68,8 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
-  xmlns:media="http://search.yahoo.com/mrss/">
+  xmlns:media="http://search.yahoo.com/mrss/"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title><![CDATA[${feedTitle}]]></title>
     <link>${escapeXml(feedHtmlUrl)}</link>

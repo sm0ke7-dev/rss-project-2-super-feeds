@@ -57,6 +57,9 @@ export const aggregateFeed = internalAction({
         `Feed ${officeId}x${locationId}x${serviceId}: ${successes} sources fetched, ${failures} failed`
       );
 
+      // Extract full content for new Article items
+      await ctx.runAction(internal.actions.extractContent.extractContentBatch, {});
+
       // Generate feed files (proceeds even if some sources failed)
       await ctx.runAction(internal.actions.generateFeed.generateFeedFiles, {
         officeId,

@@ -9,6 +9,7 @@
  */
 
 import type * as actions_aggregation from "../actions/aggregation.js";
+import type * as actions_extractContent from "../actions/extractContent.js";
 import type * as actions_fetchSource from "../actions/fetchSource.js";
 import type * as actions_generateFeed from "../actions/generateFeed.js";
 import type * as crons from "../crons.js";
@@ -49,6 +50,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "actions/aggregation": typeof actions_aggregation;
+  "actions/extractContent": typeof actions_extractContent;
   "actions/fetchSource": typeof actions_fetchSource;
   "actions/generateFeed": typeof actions_generateFeed;
   crons: typeof crons;

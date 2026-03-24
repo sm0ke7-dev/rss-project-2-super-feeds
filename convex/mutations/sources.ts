@@ -57,6 +57,19 @@ export const markFetchSuccess = internalMutation({
   },
 });
 
+export const updateItemContent = internalMutation({
+  args: {
+    itemId: v.id("feedItems"),
+    fullContent: v.optional(v.string()),
+  },
+  handler: async (ctx, { itemId, fullContent }) => {
+    await ctx.db.patch(itemId, {
+      fullContent,
+      contentExtractedAt: Date.now(),
+    });
+  },
+});
+
 export const markFetchError = internalMutation({
   args: {
     sourceId: v.id("sources"),

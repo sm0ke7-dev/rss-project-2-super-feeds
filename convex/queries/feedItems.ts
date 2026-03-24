@@ -1,6 +1,17 @@
 import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 
+export const getItemsNeedingContent = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("feedItems").collect();
+    return items
+      .filter(item => item.schemaType === "Article" && item.contentExtractedAt === undefined)
+      .slice(0, 10)
+      .map(item => ({ _id: item._id, link: item.link }));
+  },
+});
+
 export const getFeedItemsForOfficeService = internalQuery({
   args: {
     officeId: v.id("offices"),

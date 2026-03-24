@@ -97,6 +97,8 @@ export default defineSchema({
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
     locationId: v.optional(v.id("locations")),
+    fullContent: v.optional(v.string()),
+    contentExtractedAt: v.optional(v.number()),
   })
     .index("by_source", ["sourceId"])
     .index("by_guid", ["guid"])
