@@ -5,6 +5,8 @@ import { Id } from "../../convex/_generated/dataModel";
 export default function FeedBrowserPage() {
   const feeds = useQuery(api.generatedFeeds.list);
   const removeFeed = useMutation(api.generatedFeeds.remove);
+  const purgeOrphaned = useMutation(api.feedItems.purgeOrphaned);
+  const itemCount = useQuery(api.feedItems.count);
   const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
   // Derive the .convex.site URL from the .convex.cloud URL
   const siteBase = convexUrl?.replace(".convex.cloud", ".convex.site") ?? "";
@@ -14,9 +16,26 @@ export default function FeedBrowserPage() {
     await removeFeed({ id });
   }
 
+  async function handlePurge() {
+    if (!confirm("Remove all feed items from deleted sources? This won't affect items from active sources.")) return;
+    const result = await purgeOrphaned();
+    alert(`Purged ${result.deleted} orphaned items.`);
+  }
+
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Generated Feeds ({feeds?.length ?? "…"})</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">Generated Feeds ({feeds?.length ?? "…"})</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-500">{itemCount ?? "…"} feed items in database</span>
+          <button
+            onClick={handlePurge}
+            className="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm hover:bg-amber-600 transition-colors"
+          >
+            Purge Orphaned Items
+          </button>
+        </div>
+      </div>
       {!feeds ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : feeds.length === 0 ? (

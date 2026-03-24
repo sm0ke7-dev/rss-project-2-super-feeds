@@ -12,6 +12,7 @@ import type * as actions_aggregation from "../actions/aggregation.js";
 import type * as actions_fetchSource from "../actions/fetchSource.js";
 import type * as actions_generateFeed from "../actions/generateFeed.js";
 import type * as crons from "../crons.js";
+import type * as feedItems from "../feedItems.js";
 import type * as feedRuns from "../feedRuns.js";
 import type * as generatedFeeds from "../generatedFeeds.js";
 import type * as http from "../http.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   "actions/fetchSource": typeof actions_fetchSource;
   "actions/generateFeed": typeof actions_generateFeed;
   crons: typeof crons;
+  feedItems: typeof feedItems;
   feedRuns: typeof feedRuns;
   generatedFeeds: typeof generatedFeeds;
   http: typeof http;
