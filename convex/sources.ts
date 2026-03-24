@@ -66,6 +66,18 @@ export const update = mutation({
   },
 });
 
+export const patch = mutation({
+  args: {
+    id: v.id("sources"),
+    type: v.optional(v.union(v.literal("brand"), v.literal("authority"), v.literal("freshness"))),
+    active: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...fields } = args;
+    await ctx.db.patch(id, fields);
+  },
+});
+
 export const remove = mutation({
   args: { id: v.id("sources") },
   handler: async (ctx, args) => {

@@ -31,16 +31,10 @@ export const aggregateFeed = internalAction({
         }
       );
 
-      // Filter out authority sources (not fetched via RSS pipeline)
-      const fetchableSources = sources.filter(
-        (s): s is typeof s & { type: "brand" | "freshness" } =>
-          s.type !== "authority"
-      );
-
       // Max 3 simultaneous source fetches
       const sourceLimit = pLimit(3);
 
-      const fetchTasks = fetchableSources.map((source) =>
+      const fetchTasks = sources.map((source) =>
         sourceLimit(() =>
           ctx.runAction(internal.actions.fetchSource.fetchRssSource, {
             sourceId: source._id,
