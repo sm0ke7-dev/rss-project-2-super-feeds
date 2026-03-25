@@ -4,6 +4,7 @@ import TabNav, { TabId } from "./components/TabNav";
 import DashboardPage from "./pages/DashboardPage";
 import OfficeDetailPage from "./pages/OfficeDetailPage";
 import LocationDetailPage from "./pages/LocationDetailPage";
+import LocationServiceDetailPage from "./pages/LocationServiceDetailPage";
 import OfficesPage from "./pages/OfficesPage";
 import LocationsPage from "./pages/LocationsPage";
 import ServicesPage from "./pages/ServicesPage";
@@ -18,38 +19,65 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("dashboard");
   const [selectedOfficeId, setSelectedOfficeId] = useState<Id<"offices"> | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<Id<"locations"> | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<Id<"services"> | null>(null);
 
   function handleTabChange(tab: TabId) {
     setActiveTab(tab);
-    // Clear drill-down state when switching tabs
     setSelectedOfficeId(null);
     setSelectedLocationId(null);
+    setSelectedServiceId(null);
   }
 
   function handleSelectOffice(officeId: Id<"offices">) {
     setSelectedOfficeId(officeId);
     setSelectedLocationId(null);
+    setSelectedServiceId(null);
   }
 
   function handleSelectLocation(locationId: Id<"locations">) {
     setSelectedLocationId(locationId);
+    setSelectedServiceId(null);
+  }
+
+  function handleSelectService(serviceId: Id<"services">) {
+    setSelectedServiceId(serviceId);
+  }
+
+  function handleBackToLocation() {
+    setSelectedServiceId(null);
   }
 
   function handleBackToOffice() {
     setSelectedLocationId(null);
+    setSelectedServiceId(null);
   }
 
   function handleBackToDashboard() {
     setSelectedOfficeId(null);
     setSelectedLocationId(null);
+    setSelectedServiceId(null);
   }
 
   function renderDashboardView() {
+    if (selectedOfficeId && selectedLocationId && selectedServiceId) {
+      return (
+        <LocationServiceDetailPage
+          officeId={selectedOfficeId}
+          locationId={selectedLocationId}
+          serviceId={selectedServiceId}
+          onBack={handleBackToLocation}
+          onBackToLocation={handleBackToLocation}
+          onBackToOffice={handleBackToOffice}
+          onBackToRoot={handleBackToDashboard}
+        />
+      );
+    }
     if (selectedOfficeId && selectedLocationId) {
       return (
         <LocationDetailPage
           officeId={selectedOfficeId}
           locationId={selectedLocationId}
+          onSelectService={handleSelectService}
           onBack={handleBackToOffice}
           onBackToRoot={handleBackToDashboard}
         />
