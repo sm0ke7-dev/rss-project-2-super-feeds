@@ -136,11 +136,11 @@ export const getFeedItemsForOfficeService = internalQuery({
       contentExtractedAt: undefined,
     }));
 
-    const allItems = [...itemArrays.flat(), ...authorityItems, ...staticFeedItems];
+    const dynamicItems = [...itemArrays.flat(), ...authorityItems];
 
-    // Deduplicate by guid — keep the one with the most recent isoDate
-    const guidMap = new Map<string, (typeof allItems)[0]>();
-    for (const item of allItems) {
+    // Deduplicate dynamic items by guid — keep the one with the most recent isoDate
+    const guidMap = new Map<string, (typeof dynamicItems)[0]>();
+    for (const item of dynamicItems) {
       const existing = guidMap.get(item.guid);
       if (!existing) {
         guidMap.set(item.guid, item);
@@ -153,13 +153,16 @@ export const getFeedItemsForOfficeService = internalQuery({
       }
     }
 
-    // Sort by isoDate descending, cap at 50
-    return [...guidMap.values()]
+    // Sort dynamic items by isoDate descending, cap at 50
+    const sortedDynamic = [...guidMap.values()]
       .sort((a, b) => {
         const aDate = a.isoDate ?? "";
         const bDate = b.isoDate ?? "";
         return bDate.localeCompare(aDate);
       })
       .slice(0, 50);
+
+    // Static items (PDFs/documents) are always included regardless of cap
+    return [...sortedDynamic, ...staticFeedItems];
   },
 });
