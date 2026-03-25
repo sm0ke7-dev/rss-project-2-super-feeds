@@ -162,7 +162,31 @@ export const getFeedItemsForOfficeService = internalQuery({
       })
       .slice(0, 50);
 
-    // Static items (PDFs/documents) are always included regardless of cap
-    return [...sortedDynamic, ...staticFeedItems];
+    // Round-robin interleave: Article → DigitalDocument → VideoObject
+    const allFinal = [...sortedDynamic, ...staticFeedItems];
+    const buckets: Record<string, typeof allFinal> = {
+      Article: [],
+      DigitalDocument: [],
+      VideoObject: [],
+    };
+    for (const item of allFinal) {
+      const key = item.schemaType in buckets ? item.schemaType : "Article";
+      buckets[key].push(item);
+    }
+    const order = ["Article", "DigitalDocument", "VideoObject"];
+    const interleaved: typeof allFinal = [];
+    let remaining = true;
+    let i = 0;
+    while (remaining) {
+      remaining = false;
+      for (const type of order) {
+        if (i < buckets[type].length) {
+          interleaved.push(buckets[type][i]);
+          remaining = true;
+        }
+      }
+      i++;
+    }
+    return interleaved;
   },
 });
