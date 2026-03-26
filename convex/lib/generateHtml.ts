@@ -11,6 +11,64 @@ interface NapInfo {
   contactUrl?: string;
 }
 
+function stripHtml(text: string): string {
+  return text.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function renderItem(item: FeedPageItem): string {
+  const dateStr = item.isoDate
+    ? new Date(item.isoDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : "";
+  const datetimeAttr = item.isoDate ? ` datetime="${escapeXml(item.isoDate)}"` : "";
+
+  const thumbHtml = item.thumbnailUrl
+    ? `
+    <figure class="sf-item-thumb">
+      <img src="${escapeXml(item.thumbnailUrl)}" alt="${escapeXml(item.title)}" loading="lazy" />
+    </figure>`
+    : "";
+
+  // For videos, include a lazy-loaded YouTube iframe embed below the thumbnail
+  const videoEmbedHtml = item.schemaType === "VideoObject" && item.videoId
+    ? `
+    <div class="sf-item-video">
+      <iframe
+        src="https://www.youtube.com/embed/${escapeXml(item.videoId)}"
+        title="${escapeXml(item.title)}"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>`
+    : "";
+
+  const badgeLabel = item.schemaType === "VideoObject" ? "Video" :
+                     item.schemaType === "DigitalDocument" ? "Document" : "Article";
+
+  const rawBodyText = item.fullContent ?? item.description;
+  const bodyText = rawBodyText ? stripHtml(rawBodyText) : undefined;
+  const descHtml = bodyText
+    ? `\n    <div class="sf-item-body">\n      ${escapeXml(bodyText)}\n    </div>`
+    : "";
+
+  const metaHtml = dateStr
+    ? `
+    <p class="sf-item-meta">
+      <time${datetimeAttr}>${escapeXml(dateStr)}</time>
+    </p>`
+    : "";
+
+  return `
+  <article class="sf-item">
+    ${thumbHtml}
+    ${videoEmbedHtml}
+    <span class="sf-item-badge">${escapeXml(badgeLabel)}</span>${item.sourceName ? `<span class="sf-item-source">${escapeXml(item.sourceName)}</span>` : ""}
+    <h2 class="sf-item-title"><a href="${escapeXml(item.link)}">${escapeXml(item.title)}</a></h2>
+    ${metaHtml}
+    ${descHtml}
+  </article>`;
+}
+
 export function generateFeedHtml(
   _officeName: string,
   locationName: string,
@@ -19,7 +77,8 @@ export function generateFeedHtml(
   locationSlug: string,
   serviceSlug: string,
   feedBaseUrl: string,
-  items: FeedPageItem[],
+  featuredItems: FeedPageItem[],
+  generalItems: FeedPageItem[],
   nap?: NapInfo,
   termsUrl?: string,
   privacyUrl?: string
@@ -28,7 +87,9 @@ export function generateFeedHtml(
   const pageTitle = `AAAC ${locationName} — ${serviceName} Super Feed`;
   const metaDescription = `Aggregated wildlife removal resources for ${locationName}, ${serviceName}.`;
 
-  const jsonLdBlocks = items.map(item => {
+  const allItems = [...featuredItems, ...generalItems];
+
+  const jsonLdBlocks = allItems.map(item => {
     const ld = dispatchJsonLd(item);
     // JSON.stringify handles escaping — prevents </script> injection
     return `<script type="application/ld+json">\n${JSON.stringify(ld, null, 2)}\n</script>`;
@@ -88,58 +149,17 @@ export function generateFeedHtml(
     </nav>`
     : "";
 
-  const itemsHtml = items.map(item => {
-    const dateStr = item.isoDate
-      ? new Date(item.isoDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-      : "";
-    const datetimeAttr = item.isoDate ? ` datetime="${escapeXml(item.isoDate)}"` : "";
+  // Section 1: Featured (location-service scoped), capped at 5
+  const featuredSectionHtml = featuredItems.length > 0
+    ? `
+    <h2 class="sf-section-heading">Featured Resources</h2>
+    ${featuredItems.slice(0, 5).map(renderItem).join("\n")}`
+    : "";
 
-    const thumbHtml = item.thumbnailUrl
-      ? `
-    <figure class="sf-item-thumb">
-      <img src="${escapeXml(item.thumbnailUrl)}" alt="${escapeXml(item.title)}" loading="lazy" />
-    </figure>`
-      : "";
-
-    // For videos, include a lazy-loaded YouTube iframe embed below the thumbnail
-    const videoEmbedHtml = item.schemaType === "VideoObject" && item.videoId
-      ? `
-    <div class="sf-item-video">
-      <iframe
-        src="https://www.youtube.com/embed/${escapeXml(item.videoId)}"
-        title="${escapeXml(item.title)}"
-        loading="lazy"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen
-      ></iframe>
-    </div>`
-      : "";
-
-    const badgeLabel = item.schemaType === "VideoObject" ? "Video" :
-                       item.schemaType === "DigitalDocument" ? "Document" : "Article";
-
-    const bodyText = item.fullContent ?? item.description;
-    const descHtml = bodyText
-      ? `\n    <div class="sf-item-body">\n      ${escapeXml(bodyText)}\n    </div>`
-      : "";
-
-    const metaHtml = dateStr
-      ? `
-    <p class="sf-item-meta">
-      <time${datetimeAttr}>${escapeXml(dateStr)}</time>
-    </p>`
-      : "";
-
-    return `
-  <article class="sf-item">
-    ${thumbHtml}
-    ${videoEmbedHtml}
-    <span class="sf-item-badge">${escapeXml(badgeLabel)}</span>${item.sourceName ? `<span class="sf-item-source">${escapeXml(item.sourceName)}</span>` : ""}
-    <h2 class="sf-item-title"><a href="${escapeXml(item.link)}">${escapeXml(item.title)}</a></h2>
-    ${metaHtml}
-    ${descHtml}
-  </article>`;
-  }).join("\n");
+  // Section 2: More Resources (all other items)
+  const generalSectionHtml = `
+    <h2 class="sf-section-heading">More Resources</h2>
+    ${generalItems.slice(0, 20).map(renderItem).join("\n")}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -191,6 +211,17 @@ export function generateFeedHtml(
 
     .sf-feed-header a {
       color: var(--sf-link-color);
+    }
+
+    .sf-section-heading {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--sf-meta-color);
+      margin: 24px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--sf-border-color);
     }
 
     .sf-item {
@@ -329,12 +360,13 @@ export function generateFeedHtml(
     <header class="sf-feed-header">
       <h1>${escapeXml(pageTitle)}</h1>
       <p>
-        <a href="${escapeXml(feedXmlUrl)}">RSS Feed</a> · ${escapeXml(String(items.length))} items
+        <a href="${escapeXml(feedXmlUrl)}">RSS Feed</a> · ${escapeXml(String(allItems.length))} items
       </p>
     </header>
     ${napHtml}
     ${policyLinksHtml}
-    ${itemsHtml}
+    ${featuredSectionHtml}
+    ${generalSectionHtml}
   </section>
 </body>
 </html>`;

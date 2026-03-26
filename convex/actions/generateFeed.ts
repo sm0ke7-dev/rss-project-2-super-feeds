@@ -32,10 +32,12 @@ export const generateFeedFiles = internalAction({
       );
     }
 
-    const rawItems = await ctx.runQuery(
+    const { featured: featuredRaw, general: generalRaw } = await ctx.runQuery(
       internal.queries.feedItems.getFeedItemsForOfficeService,
       { officeId, locationId, serviceId }
     );
+
+    const rawItems = [...featuredRaw, ...generalRaw];
 
     // Build sourceId -> title map for labelling items in the HTML output
     const sourceIds = [...new Set(rawItems.map(i => i.sourceId).filter(Boolean))];
@@ -60,7 +62,7 @@ export const generateFeedFiles = internalAction({
       schemaType: item.schemaType,
     }));
 
-    const feedPageItems: FeedPageItem[] = rawItems.map((item) => ({
+    const toPageItem = (item: (typeof rawItems)[0]): FeedPageItem => ({
       guid: item.guid,
       title: item.title,
       link: item.link,
@@ -71,7 +73,10 @@ export const generateFeedFiles = internalAction({
       thumbnailUrl: item.thumbnailUrl,
       schemaType: item.schemaType,
       sourceName: item.sourceId ? sourceMap.get(item.sourceId) : undefined,
-    }));
+    });
+
+    const featuredPageItems: FeedPageItem[] = featuredRaw.map(toPageItem);
+    const generalPageItems: FeedPageItem[] = generalRaw.map(toPageItem);
 
     const meta: FeedMeta = {
       officeSlug: office.slug,
@@ -93,7 +98,8 @@ export const generateFeedFiles = internalAction({
       location.slug,
       service.slug,
       FEED_BASE_URL,
-      feedPageItems,
+      featuredPageItems,
+      generalPageItems,
       {
         name: office.name,
         address: office.address,
@@ -114,11 +120,11 @@ export const generateFeedFiles = internalAction({
       serviceSlug: service.slug,
       xmlContent,
       htmlContent,
-      itemCount: feedItems.length,
+      itemCount: featuredRaw.length + generalRaw.length,
     });
 
     console.log(
-      `Generated feed for ${office.slug}/${location.slug}/${service.slug} (${feedItems.length} items)`
+      `Generated feed for ${office.slug}/${location.slug}/${service.slug} (${featuredRaw.length + generalRaw.length} items)`
     );
 
     // Ping WebSub hub (best-effort)
@@ -127,6 +133,6 @@ export const generateFeedFiles = internalAction({
       await pingWebSubHub(WEBSUB_HUB, topicUrl);
     }
 
-    return { itemCount: feedItems.length };
+    return { itemCount: featuredRaw.length + generalRaw.length };
   },
 });

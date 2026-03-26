@@ -14,6 +14,34 @@ export const getItemsNeedingContent = internalQuery({
   },
 });
 
+// Round-robin interleave: Article → DigitalDocument → VideoObject
+function roundRobinInterleave<T extends { schemaType: string }>(items: T[]): T[] {
+  const buckets: Record<string, T[]> = {
+    Article: [],
+    DigitalDocument: [],
+    VideoObject: [],
+  };
+  for (const item of items) {
+    const key = item.schemaType in buckets ? item.schemaType : "Article";
+    buckets[key].push(item);
+  }
+  const order = ["Article", "DigitalDocument", "VideoObject"];
+  const interleaved: T[] = [];
+  let remaining = true;
+  let i = 0;
+  while (remaining) {
+    remaining = false;
+    for (const type of order) {
+      if (i < buckets[type].length) {
+        interleaved.push(buckets[type][i]);
+        remaining = true;
+      }
+    }
+    i++;
+  }
+  return interleaved;
+}
+
 export const getFeedItemsForOfficeService = internalQuery({
   args: {
     officeId: v.id("offices"),
@@ -82,6 +110,9 @@ export const getFeedItemsForOfficeService = internalQuery({
         )
         .collect(),
     ]);
+
+    // Build a Set of IDs for location-service scoped sources (featured bucket)
+    const locationServiceSourceIds = new Set(locationServiceScoped.map((s) => s._id));
 
     const allSources = [
       ...globals,
@@ -153,40 +184,37 @@ export const getFeedItemsForOfficeService = internalQuery({
       }
     }
 
-    // Sort dynamic items by isoDate descending, cap at 50
-    const sortedDynamic = [...guidMap.values()]
-      .sort((a, b) => {
+    // Split deduplicated dynamic items into featured (location-service scoped) and general
+    const featuredDynamic: (typeof dynamicItems)[0][] = [];
+    const generalDynamic: (typeof dynamicItems)[0][] = [];
+
+    for (const item of guidMap.values()) {
+      if (item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">)) {
+        featuredDynamic.push(item);
+      } else {
+        generalDynamic.push(item);
+      }
+    }
+
+    // Sort each bucket by isoDate descending
+    const sortByDate = <T extends { isoDate?: string }>(arr: T[]): T[] =>
+      [...arr].sort((a, b) => {
         const aDate = a.isoDate ?? "";
         const bDate = b.isoDate ?? "";
         return bDate.localeCompare(aDate);
-      })
-      .slice(0, 50);
+      });
 
-    // Round-robin interleave: Article → DigitalDocument → VideoObject
-    const allFinal = [...sortedDynamic, ...staticFeedItems];
-    const buckets: Record<string, typeof allFinal> = {
-      Article: [],
-      DigitalDocument: [],
-      VideoObject: [],
-    };
-    for (const item of allFinal) {
-      const key = item.schemaType in buckets ? item.schemaType : "Article";
-      buckets[key].push(item);
-    }
-    const order = ["Article", "DigitalDocument", "VideoObject"];
-    const interleaved: typeof allFinal = [];
-    let remaining = true;
-    let i = 0;
-    while (remaining) {
-      remaining = false;
-      for (const type of order) {
-        if (i < buckets[type].length) {
-          interleaved.push(buckets[type][i]);
-          remaining = true;
-        }
-      }
-      i++;
-    }
-    return interleaved;
+    const sortedFeatured = sortByDate(featuredDynamic);
+    // Cap general dynamic items at 50
+    const sortedGeneral = sortByDate(generalDynamic).slice(0, 50);
+
+    // Static items always go into the general bucket
+    const generalAll = [...sortedGeneral, ...staticFeedItems];
+
+    // Apply round-robin interleave to each bucket separately
+    const featured = roundRobinInterleave(sortedFeatured);
+    const general = roundRobinInterleave(generalAll);
+
+    return { featured, general };
   },
 });
