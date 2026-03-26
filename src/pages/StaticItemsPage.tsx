@@ -10,7 +10,6 @@ type FormState = {
   url: string;
   description: string;
   type: ItemType;
-  sourceId: string;
   publishedAt: string;
 };
 
@@ -19,7 +18,6 @@ const EMPTY_FORM: FormState = {
   url: "",
   description: "",
   type: "brand",
-  sourceId: "",
   publishedAt: new Date().toISOString().slice(0, 10),
 };
 
@@ -31,7 +29,6 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function StaticItemsPage() {
   const items = useQuery(api.static_items.list);
-  const sources = useQuery(api.sources.list);
   const createItem = useMutation(api.static_items.create);
   const updateItem = useMutation(api.static_items.update);
   const removeItem = useMutation(api.static_items.remove);
@@ -53,7 +50,6 @@ export default function StaticItemsPage() {
       url: item.url,
       description: item.description,
       type: item.type,
-      sourceId: item.sourceId,
       publishedAt: new Date(item.publishedAt).toISOString().slice(0, 10),
     });
     setShowModal(true);
@@ -65,7 +61,7 @@ export default function StaticItemsPage() {
   }
 
   async function handleSubmit() {
-    if (!form.title.trim() || !form.url.trim() || !form.sourceId.trim()) return;
+    if (!form.title.trim() || !form.url.trim()) return;
     const publishedAt = new Date(form.publishedAt).getTime();
     if (editingId) {
       await updateItem({
@@ -74,7 +70,6 @@ export default function StaticItemsPage() {
         url: form.url,
         description: form.description,
         type: form.type,
-        sourceId: form.sourceId as Id<"sources">,
         publishedAt,
       });
     } else {
@@ -83,7 +78,6 @@ export default function StaticItemsPage() {
         url: form.url,
         description: form.description,
         type: form.type,
-        sourceId: form.sourceId as Id<"sources">,
         publishedAt,
       });
     }
@@ -218,19 +212,6 @@ export default function StaticItemsPage() {
                   <option value="brand">Brand</option>
                   <option value="authority">Authority</option>
                   <option value="freshness">Freshness</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Source</label>
-                <select
-                  value={form.sourceId}
-                  onChange={e => setForm({ ...form, sourceId: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">— select a source —</option>
-                  {sources?.map(s => (
-                    <option key={s._id} value={s._id}>{s.title}</option>
-                  ))}
                 </select>
               </div>
               <div>

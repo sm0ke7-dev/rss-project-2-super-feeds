@@ -75,7 +75,7 @@ export default defineSchema({
       v.literal("authority"),
       v.literal("freshness")
     ),
-    sourceId: v.id("sources"),
+    sourceId: v.optional(v.id("sources")),
     publishedAt: v.number(),
   })
     .index("by_source", ["sourceId"])
