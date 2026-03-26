@@ -8,6 +8,10 @@ export default defineSchema({
     city: v.string(),
     state: v.string(),
     active: v.boolean(),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    zip: v.optional(v.string()),
+    contactUrl: v.optional(v.string()),
   })
     .index("by_slug", ["slug"])
     .index("by_active", ["active"]),

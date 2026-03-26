@@ -1,6 +1,16 @@
 import { escapeXml } from "./generateRss";
 import { dispatchJsonLd, FeedPageItem } from "./generateJsonLd";
 
+interface NapInfo {
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  phone?: string;
+  contactUrl?: string;
+}
+
 export function generateFeedHtml(
   _officeName: string,
   locationName: string,
@@ -9,7 +19,10 @@ export function generateFeedHtml(
   locationSlug: string,
   serviceSlug: string,
   feedBaseUrl: string,
-  items: FeedPageItem[]
+  items: FeedPageItem[],
+  nap?: NapInfo,
+  termsUrl?: string,
+  privacyUrl?: string
 ): string {
   const feedXmlUrl = `${feedBaseUrl}/feeds/${officeSlug}/${locationSlug}/${serviceSlug}/feed.xml`;
   const pageTitle = `AAAC ${locationName} — ${serviceName} Super Feed`;
@@ -20,6 +33,60 @@ export function generateFeedHtml(
     // JSON.stringify handles escaping — prevents </script> injection
     return `<script type="application/ld+json">\n${JSON.stringify(ld, null, 2)}\n</script>`;
   }).join("\n");
+
+  // LocalBusiness JSON-LD — only emitted when we have at least address or phone
+  let localBusinessLd = "";
+  if (nap && (nap.address || nap.phone)) {
+    const ld: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: nap.name,
+    };
+    if (nap.address) {
+      ld.address = {
+        "@type": "PostalAddress",
+        streetAddress: nap.address,
+        ...(nap.city ? { addressLocality: nap.city } : {}),
+        ...(nap.state ? { addressRegion: nap.state } : {}),
+        ...(nap.zip ? { postalCode: nap.zip } : {}),
+        addressCountry: "US",
+      };
+    }
+    if (nap.phone) {
+      ld.telephone = nap.phone;
+    }
+    if (nap.contactUrl) {
+      ld.url = nap.contactUrl;
+    }
+    localBusinessLd = `<script type="application/ld+json">\n${JSON.stringify(ld, null, 2)}\n</script>`;
+  }
+
+  // NAP block HTML
+  let napHtml = "";
+  if (nap) {
+    const addressPart = nap.address
+      ? ` — ${escapeXml(nap.address)}, ${escapeXml(nap.city ?? "")}, ${escapeXml(nap.state ?? "")} ${escapeXml(nap.zip ?? "")}`.trimEnd()
+      : "";
+    const phonePart = nap.phone
+      ? ` · <a href="tel:${escapeXml(nap.phone)}">${escapeXml(nap.phone)}</a>`
+      : "";
+    napHtml = `
+    <div class="sf-nap">
+      <strong>${escapeXml(nap.name)}</strong>${addressPart}${phonePart}
+    </div>`;
+  }
+
+  // Policy links HTML
+  const policyLinks: string[] = [];
+  if (termsUrl) policyLinks.push(`<a href="${escapeXml(termsUrl)}">Terms &amp; Conditions</a>`);
+  if (privacyUrl) policyLinks.push(`<a href="${escapeXml(privacyUrl)}">Privacy Policy</a>`);
+  if (nap?.contactUrl) policyLinks.push(`<a href="${escapeXml(nap.contactUrl)}">Contact Us</a>`);
+  const policyLinksHtml = policyLinks.length > 0
+    ? `
+    <nav class="sf-policy-links">
+      ${policyLinks.join("\n      ")}
+    </nav>`
+    : "";
 
   const itemsHtml = items.map(item => {
     const dateStr = item.isoDate
@@ -83,6 +150,7 @@ export function generateFeedHtml(
   <title>${escapeXml(pageTitle)}</title>
   <meta name="description" content="${escapeXml(metaDescription)}" />
   <link rel="alternate" type="application/rss+xml" title="${escapeXml(pageTitle)}" href="${escapeXml(feedXmlUrl)}" />
+  ${localBusinessLd}
   ${jsonLdBlocks}
   <style>
     :root {
@@ -208,6 +276,39 @@ export function generateFeedHtml(
       margin-top: 8px;
     }
 
+    .sf-nap {
+      font-size: 13px;
+      color: var(--sf-meta-color);
+      margin-bottom: 8px;
+    }
+
+    .sf-nap a {
+      color: var(--sf-link-color);
+      text-decoration: none;
+    }
+
+    .sf-nap a:hover {
+      text-decoration: underline;
+    }
+
+    .sf-policy-links {
+      font-size: 12px;
+      color: var(--sf-meta-color);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--sf-border-color);
+    }
+
+    .sf-policy-links a {
+      color: var(--sf-link-color);
+      text-decoration: none;
+      margin-right: 12px;
+    }
+
+    .sf-policy-links a:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 600px) {
       .sf-feed {
         padding: 16px 12px;
@@ -231,6 +332,8 @@ export function generateFeedHtml(
         <a href="${escapeXml(feedXmlUrl)}">RSS Feed</a> · ${escapeXml(String(items.length))} items
       </p>
     </header>
+    ${napHtml}
+    ${policyLinksHtml}
     ${itemsHtml}
   </section>
 </body>
