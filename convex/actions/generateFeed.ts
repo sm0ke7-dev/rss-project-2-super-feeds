@@ -9,6 +9,8 @@ import { FeedPageItem } from "../lib/generateJsonLd";
 import { pingWebSubHub } from "../lib/webSub";
 
 const FEED_BASE_URL = process.env.FEED_BASE_URL ?? "";
+const TERMS_URL = process.env.TERMS_URL ?? "";
+const PRIVACY_URL = process.env.PRIVACY_URL ?? "";
 const WEBSUB_HUB = "https://pubsubhubbub.appspot.com/";
 
 export const generateFeedFiles = internalAction({
@@ -91,7 +93,18 @@ export const generateFeedFiles = internalAction({
       location.slug,
       service.slug,
       FEED_BASE_URL,
-      feedPageItems
+      feedPageItems,
+      {
+        name: office.name,
+        address: office.address,
+        city: office.city,
+        state: office.state,
+        zip: office.zip,
+        phone: office.phone,
+        contactUrl: office.contactUrl,
+      },
+      TERMS_URL,
+      PRIVACY_URL
     );
 
     // Store in Convex instead of R2

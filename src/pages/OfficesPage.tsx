@@ -10,6 +10,10 @@ type Office = {
   city: string;
   state: string;
   active: boolean;
+  phone?: string;
+  address?: string;
+  zip?: string;
+  contactUrl?: string;
 };
 
 type FormState = {
@@ -18,9 +22,13 @@ type FormState = {
   city: string;
   state: string;
   active: boolean;
+  phone: string;
+  address: string;
+  zip: string;
+  contactUrl: string;
 };
 
-const EMPTY_FORM: FormState = { name: "", slug: "", city: "", state: "", active: true };
+const EMPTY_FORM: FormState = { name: "", slug: "", city: "", state: "", active: true, phone: "", address: "", zip: "", contactUrl: "" };
 
 export default function OfficesPage() {
   const offices = useQuery(api.offices.list);
@@ -37,7 +45,7 @@ export default function OfficesPage() {
   }
 
   function openEdit(office: Office) {
-    setForm({ name: office.name, slug: office.slug, city: office.city, state: office.state, active: office.active });
+    setForm({ name: office.name, slug: office.slug, city: office.city, state: office.state, active: office.active, phone: office.phone ?? "", address: office.address ?? "", zip: office.zip ?? "", contactUrl: office.contactUrl ?? "" });
     setModal({ mode: "edit", office });
   }
 
@@ -50,7 +58,18 @@ export default function OfficesPage() {
     if (modal?.mode === "add") {
       await createOffice({ name: form.name, slug: form.slug, city: form.city, state: form.state });
     } else if (modal?.mode === "edit" && modal.office) {
-      await updateOffice({ id: modal.office._id, name: form.name, slug: form.slug, city: form.city, state: form.state, active: form.active });
+      await updateOffice({
+        id: modal.office._id,
+        name: form.name,
+        slug: form.slug,
+        city: form.city,
+        state: form.state,
+        active: form.active,
+        phone: form.phone || undefined,
+        address: form.address || undefined,
+        zip: form.zip || undefined,
+        contactUrl: form.contactUrl || undefined,
+      });
     }
     closeModal();
   }
@@ -61,7 +80,7 @@ export default function OfficesPage() {
   }
 
   async function toggleActive(office: Office) {
-    await updateOffice({ id: office._id, name: office.name, slug: office.slug, city: office.city, state: office.state, active: !office.active });
+    await updateOffice({ id: office._id, name: office.name, slug: office.slug, city: office.city, state: office.state, active: !office.active, phone: office.phone, address: office.address, zip: office.zip, contactUrl: office.contactUrl });
   }
 
   return (
@@ -171,6 +190,42 @@ export default function OfficesPage() {
                   onChange={e => setForm({ ...form, state: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="e.g. NY"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Phone</label>
+                <input
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. (555) 123-4567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Street Address</label>
+                <input
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. 123 Main St"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Zip Code</label>
+                <input
+                  value={form.zip}
+                  onChange={e => setForm({ ...form, zip: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. 10001"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Contact URL</label>
+                <input
+                  value={form.contactUrl}
+                  onChange={e => setForm({ ...form, contactUrl: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. https://example.com/contact"
                 />
               </div>
               {modal.mode === "edit" && (
