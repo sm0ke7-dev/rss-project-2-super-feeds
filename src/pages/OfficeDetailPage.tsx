@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
@@ -13,6 +13,8 @@ export default function OfficeDetailPage({ officeId, onSelectLocation, onBack }:
   const locations = useQuery(api.locations.listByOffice, { officeId });
   const sources = useQuery(api.sources.list);
   const feedRuns = useQuery(api.feedRuns.list);
+
+  const removeLocation = useMutation(api.locations.remove);
 
   const office = offices?.find(o => o._id === officeId);
 
@@ -93,22 +95,36 @@ export default function OfficeDetailPage({ officeId, onSelectLocation, onBack }:
             const runCount = runCountByLocation.get(location._id) ?? 0;
 
             return (
-              <button
+              <div
                 key={location._id}
+                className="bg-white rounded-lg border border-gray-200 p-4 text-left hover:border-blue-400 hover:shadow-sm transition-all cursor-pointer relative"
                 onClick={() => onSelectLocation(location._id)}
-                className="bg-white rounded-lg border border-gray-200 p-4 text-left hover:border-blue-400 hover:shadow-sm transition-all cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-2">
                   <h4 className="text-base font-semibold text-gray-900 leading-tight">{location.name}</h4>
-                  <span
-                    className={`ml-2 shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      location.active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
-                    {location.active ? "Active" : "Inactive"}
-                  </span>
+                  <div className="flex items-center gap-2 ml-2 shrink-0">
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        location.active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {location.active ? "Active" : "Inactive"}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${location.name}"? This cannot be undone.`)) {
+                          removeLocation({ id: location._id });
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-600 text-xs transition-colors"
+                      title="Delete location"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-400 font-mono mb-3">{location.slug}</p>
                 <div className="flex gap-4 text-xs text-gray-500">
@@ -121,7 +137,7 @@ export default function OfficeDetailPage({ officeId, onSelectLocation, onBack }:
                     {runCount === 1 ? "run" : "runs"}
                   </span>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
