@@ -30,6 +30,21 @@ export const create = mutation({
   },
 });
 
+export const update = mutation({
+  args: {
+    id: v.id("static_items"),
+    title: v.string(),
+    url: v.string(),
+    description: v.string(),
+    type: v.union(v.literal("brand"), v.literal("authority"), v.literal("freshness")),
+    sourceId: v.id("sources"),
+    publishedAt: v.number(),
+  },
+  handler: async (ctx, { id, ...fields }) => {
+    await ctx.db.patch(id, fields);
+  },
+});
+
 export const remove = mutation({
   args: { id: v.id("static_items") },
   handler: async (ctx, args) => {

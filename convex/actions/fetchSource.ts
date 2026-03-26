@@ -29,7 +29,7 @@ export const fetchRssSource = internalAction({
   args: {
     sourceId: v.id("sources"),
     url: v.string(),
-    sourceType: v.union(v.literal("brand"), v.literal("freshness")),
+    sourceType: v.union(v.literal("brand"), v.literal("freshness"), v.literal("authority")),
   },
   handler: async (ctx, { sourceId, url }) => {
     try {

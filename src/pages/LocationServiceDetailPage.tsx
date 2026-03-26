@@ -50,6 +50,7 @@ export default function LocationServiceDetailPage({
   const feedRuns = useQuery(api.feedRuns.list);
   const generatedFeeds = useQuery(api.generatedFeeds.list);
   const createSource = useMutation(api.sources.create);
+  const removeSource = useMutation(api.sources.remove);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState<AddSourceFormState>(EMPTY_ADD_FORM);
@@ -184,6 +185,7 @@ export default function LocationServiceDetailPage({
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">Type</th>
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">TTL</th>
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">Last Fetched</th>
+                  <th className="px-4 py-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -208,6 +210,15 @@ export default function LocationServiceDetailPage({
                     <td className="px-4 py-2 text-gray-500">{src.ttlMinutes}m</td>
                     <td className="px-4 py-2 text-gray-500 text-xs">
                       {src.lastFetchedAt ? new Date(src.lastFetchedAt).toLocaleString() : "Never"}
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => { if (confirm(`Remove "${src.title || src.url}"?`)) removeSource({ id: src._id }); }}
+                        className="text-red-400 hover:text-red-600 text-xs transition-colors"
+                        title="Remove source"
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 ))}

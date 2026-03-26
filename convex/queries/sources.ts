@@ -113,6 +113,17 @@ export const getSourceById = internalQuery({
   },
 });
 
+// Get all active sources (used by full refresh to deduplicate fetching)
+export const getAllActiveSources = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("sources")
+      .filter((q) => q.eq(q.field("active"), true))
+      .collect();
+  },
+});
+
 // List all sources (for admin UI)
 export const listSources = query({
   args: {},

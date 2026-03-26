@@ -33,31 +33,60 @@ export default function StaticItemsPage() {
   const items = useQuery(api.static_items.list);
   const sources = useQuery(api.sources.list);
   const createItem = useMutation(api.static_items.create);
+  const updateItem = useMutation(api.static_items.update);
   const removeItem = useMutation(api.static_items.remove);
 
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<Id<"static_items"> | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
   function openAdd() {
+    setEditingId(null);
     setForm(EMPTY_FORM);
+    setShowModal(true);
+  }
+
+  function openEdit(item: NonNullable<typeof items>[0]) {
+    setEditingId(item._id);
+    setForm({
+      title: item.title,
+      url: item.url,
+      description: item.description,
+      type: item.type,
+      sourceId: item.sourceId,
+      publishedAt: new Date(item.publishedAt).toISOString().slice(0, 10),
+    });
     setShowModal(true);
   }
 
   function closeModal() {
     setShowModal(false);
+    setEditingId(null);
   }
 
   async function handleSubmit() {
     if (!form.title.trim() || !form.url.trim() || !form.sourceId.trim()) return;
     const publishedAt = new Date(form.publishedAt).getTime();
-    await createItem({
-      title: form.title,
-      url: form.url,
-      description: form.description,
-      type: form.type,
-      sourceId: form.sourceId as Id<"sources">,
-      publishedAt,
-    });
+    if (editingId) {
+      await updateItem({
+        id: editingId,
+        title: form.title,
+        url: form.url,
+        description: form.description,
+        type: form.type,
+        sourceId: form.sourceId as Id<"sources">,
+        publishedAt,
+      });
+    } else {
+      await createItem({
+        title: form.title,
+        url: form.url,
+        description: form.description,
+        type: form.type,
+        sourceId: form.sourceId as Id<"sources">,
+        publishedAt,
+      });
+    }
     closeModal();
   }
 
@@ -125,6 +154,13 @@ export default function StaticItemsPage() {
                       ↗
                     </a>
                     <button
+                      onClick={() => openEdit(item)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors text-sm"
+                      title="Edit"
+                    >
+                      ✎
+                    </button>
+                    <button
                       onClick={() => handleDelete(item._id)}
                       className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                       title="Delete"
@@ -142,7 +178,7 @@ export default function StaticItemsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-base font-semibold text-gray-800 mb-4">Add Static Item</h3>
+            <h3 className="text-base font-semibold text-gray-800 mb-4">{editingId ? "Edit Static Item" : "Add Static Item"}</h3>
 
             <div className="space-y-3">
               <div>

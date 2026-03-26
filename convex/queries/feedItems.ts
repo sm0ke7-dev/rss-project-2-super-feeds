@@ -196,23 +196,25 @@ export const getFeedItemsForOfficeService = internalQuery({
       }
     }
 
-    // Sort each bucket by isoDate descending
-    const sortByDate = <T extends { isoDate?: string }>(arr: T[]): T[] =>
-      [...arr].sort((a, b) => {
-        const aDate = a.isoDate ?? "";
-        const bDate = b.isoDate ?? "";
-        return bDate.localeCompare(aDate);
-      });
+    // Fisher-Yates shuffle for random selection each refresh
+    const shuffle = <T>(arr: T[]): T[] => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
 
-    const sortedFeatured = sortByDate(featuredDynamic);
-    // Cap general dynamic items at 50
-    const sortedGeneral = sortByDate(generalDynamic).slice(0, 50);
+    // Randomly pick up to 5 featured and 20 general dynamic items
+    const shuffledFeatured = shuffle(featuredDynamic).slice(0, 5);
+    const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
 
-    // Static items always go into the general bucket
-    const generalAll = [...sortedGeneral, ...staticFeedItems];
+    // Static items shuffled into the general bucket
+    const generalAll = shuffle([...shuffledGeneral, ...staticFeedItems]);
 
     // Apply round-robin interleave to each bucket separately
-    const featured = roundRobinInterleave(sortedFeatured);
+    const featured = roundRobinInterleave(shuffledFeatured);
     const general = roundRobinInterleave(generalAll);
 
     return { featured, general };
