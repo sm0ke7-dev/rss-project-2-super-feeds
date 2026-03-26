@@ -15,6 +15,7 @@ export const create = mutation({
     url: v.string(),
     description: v.string(),
     type: v.union(v.literal("brand"), v.literal("authority"), v.literal("freshness")),
+    serviceId: v.optional(v.id("services")),
     publishedAt: v.number(),
   },
   handler: async (ctx, args) => {
@@ -23,6 +24,7 @@ export const create = mutation({
       url: args.url,
       description: args.description,
       type: args.type,
+      serviceId: args.serviceId,
       publishedAt: args.publishedAt,
     });
   },
@@ -35,6 +37,7 @@ export const update = mutation({
     url: v.string(),
     description: v.string(),
     type: v.union(v.literal("brand"), v.literal("authority"), v.literal("freshness")),
+    serviceId: v.optional(v.id("services")),
     publishedAt: v.number(),
   },
   handler: async (ctx, { id, ...fields }) => {

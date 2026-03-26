@@ -142,10 +142,13 @@ export const getFeedItemsForOfficeService = internalQuery({
       )
       .collect();
 
-    // Fetch static authority documents (PDFs etc) — global scope, included in all feeds
+    // Fetch static authority documents (PDFs etc) — split by service scope
     const staticItems = await ctx.db.query("static_items").collect();
 
-    const staticFeedItems = staticItems.map(s => ({
+    const serviceScopedStaticItems = staticItems.filter(s => s.serviceId === serviceId);
+    const globalStaticItems = staticItems.filter(s => !s.serviceId);
+
+    const toFeedItem = (s: typeof staticItems[0]) => ({
       _id: s._id as unknown as Id<"feedItems">,
       _creationTime: s._creationTime,
       sourceId: s.sourceId,
@@ -165,7 +168,10 @@ export const getFeedItemsForOfficeService = internalQuery({
       locationId: undefined,
       fullContent: undefined,
       contentExtractedAt: undefined,
-    }));
+    });
+
+    const serviceScopedStaticFeedItems = serviceScopedStaticItems.map(toFeedItem);
+    const globalStaticFeedItems = globalStaticItems.map(toFeedItem);
 
     const dynamicItems = [...itemArrays.flat(), ...authorityItems];
 
@@ -210,11 +216,12 @@ export const getFeedItemsForOfficeService = internalQuery({
     const shuffledFeatured = shuffle(featuredDynamic).slice(0, 5);
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
 
-    // Static items shuffled into the general bucket
-    const generalAll = shuffle([...shuffledGeneral, ...staticFeedItems]);
+    // Service-scoped static items go into featured (up to 5 total), global static into general
+    const featuredAll = shuffle([...shuffledFeatured, ...serviceScopedStaticFeedItems]).slice(0, 5);
+    const generalAll = shuffle([...shuffledGeneral, ...globalStaticFeedItems]);
 
     // Apply round-robin interleave to each bucket separately
-    const featured = roundRobinInterleave(shuffledFeatured);
+    const featured = roundRobinInterleave(featuredAll);
     const general = roundRobinInterleave(generalAll);
 
     return { featured, general };

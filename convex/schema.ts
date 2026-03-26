@@ -76,6 +76,7 @@ export default defineSchema({
       v.literal("freshness")
     ),
     sourceId: v.optional(v.id("sources")),
+    serviceId: v.optional(v.id("services")),
     publishedAt: v.number(),
   })
     .index("by_source", ["sourceId"])

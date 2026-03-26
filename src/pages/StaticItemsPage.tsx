@@ -10,6 +10,7 @@ type FormState = {
   url: string;
   description: string;
   type: ItemType;
+  serviceId: string;
   publishedAt: string;
 };
 
@@ -18,6 +19,7 @@ const EMPTY_FORM: FormState = {
   url: "",
   description: "",
   type: "brand",
+  serviceId: "",
   publishedAt: new Date().toISOString().slice(0, 10),
 };
 
@@ -29,6 +31,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function StaticItemsPage() {
   const items = useQuery(api.static_items.list);
+  const services = useQuery(api.services.list);
   const createItem = useMutation(api.static_items.create);
   const updateItem = useMutation(api.static_items.update);
   const removeItem = useMutation(api.static_items.remove);
@@ -50,6 +53,7 @@ export default function StaticItemsPage() {
       url: item.url,
       description: item.description,
       type: item.type,
+      serviceId: item.serviceId ?? "",
       publishedAt: new Date(item.publishedAt).toISOString().slice(0, 10),
     });
     setShowModal(true);
@@ -70,6 +74,7 @@ export default function StaticItemsPage() {
         url: form.url,
         description: form.description,
         type: form.type,
+        ...(form.serviceId ? { serviceId: form.serviceId as Id<"services"> } : {}),
         publishedAt,
       });
     } else {
@@ -78,6 +83,7 @@ export default function StaticItemsPage() {
         url: form.url,
         description: form.description,
         type: form.type,
+        ...(form.serviceId ? { serviceId: form.serviceId as Id<"services"> } : {}),
         publishedAt,
       });
     }
@@ -212,6 +218,19 @@ export default function StaticItemsPage() {
                   <option value="brand">Brand</option>
                   <option value="authority">Authority</option>
                   <option value="freshness">Freshness</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Service <span className="text-gray-400">(optional — tags item to a service's Featured section)</span></label>
+                <select
+                  value={form.serviceId}
+                  onChange={e => setForm({ ...form, serviceId: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">— global (More Resources) —</option>
+                  {services?.map(s => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
