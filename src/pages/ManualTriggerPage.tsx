@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 export default function ManualTriggerPage() {
   const offices = useQuery(api.offices.list);
@@ -15,6 +16,18 @@ export default function ManualTriggerPage() {
   const triggerFeed = useMutation(api.mutations.admin.triggerFeed);
   const triggerAll = useMutation(api.mutations.admin.triggerAllFeeds);
   const triggerFullRefresh = useMutation(api.mutations.admin.triggerFullRefresh);
+  const triggerBackfill = useMutation(api.mutations.admin.triggerBackfillScoring);
+  const cancelRun = useMutation(api.mutations.admin.cancelFeedRun);
+
+  const runningRun = useQuery(
+    api.feedRuns.getRunningForCombo,
+    selectedLocationId && selectedServiceId
+      ? {
+          locationId: selectedLocationId as Id<"locations">,
+          serviceId: selectedServiceId as Id<"services">,
+        }
+      : "skip"
+  );
 
   async function handleTriggerOne() {
     if (!selectedOfficeId || !selectedLocationId || !selectedServiceId) return;
@@ -97,13 +110,34 @@ export default function ManualTriggerPage() {
               ))}
             </select>
           </div>
-          <button
-            onClick={handleTriggerOne}
-            disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
-          >
-            Trigger Feed
-          </button>
+          {runningRun ? (
+            <div className="space-y-2">
+              <div className="w-full bg-amber-50 border border-amber-200 text-amber-800 text-sm font-medium py-2 rounded text-center">
+                ⏳ Feed run in progress…
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await cancelRun({ runId: runningRun._id });
+                    setStatus("Run cancelled.");
+                  } catch (e) {
+                    setStatus(`Cancel failed: ${e instanceof Error ? e.message : String(e)}`);
+                  }
+                }}
+                className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 rounded transition-colors"
+              >
+                Cancel Run
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleTriggerOne}
+              disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
+            >
+              Trigger Feed
+            </button>
+          )}
         </div>
       </div>
 
@@ -128,6 +162,27 @@ export default function ManualTriggerPage() {
           className="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors"
         >
           Force Full Refresh
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 p-6 max-w-lg mt-4">
+        <h3 className="font-medium text-gray-800 mb-2">Backfill Relevance Scores</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Score all existing unscored feed items using GPT-4o-mini. Processes items in batches of 10 until all are scored.
+        </p>
+        <button
+          onClick={async () => {
+            setStatus("Scheduling relevance score backfill…");
+            try {
+              await triggerBackfill({});
+              setStatus("Backfill scheduled! Check Convex logs for progress.");
+            } catch (e) {
+              setStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          }}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2 rounded transition-colors"
+        >
+          Backfill Relevance Scores
         </button>
       </div>
 

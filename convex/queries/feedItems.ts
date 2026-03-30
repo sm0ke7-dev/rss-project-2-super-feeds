@@ -2,6 +2,27 @@ import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
 
+export const getItemsNeedingScoring = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const articles = await ctx.db
+      .query("feedItems")
+      .withIndex("by_schema_type", (q) => q.eq("schemaType", "Article"))
+      .filter((q) => q.eq(q.field("relevanceScoredAt"), undefined))
+      .take(5);
+    const videos = await ctx.db
+      .query("feedItems")
+      .withIndex("by_schema_type", (q) => q.eq("schemaType", "VideoObject"))
+      .filter((q) => q.eq(q.field("relevanceScoredAt"), undefined))
+      .take(5);
+    return [...articles, ...videos].map((item) => ({
+      _id: item._id,
+      title: item.title,
+      description: item.description ?? "",
+    }));
+  },
+});
+
 export const getItemsNeedingContent = internalQuery({
   args: {},
   handler: async (ctx) => {
@@ -190,11 +211,17 @@ export const getFeedItemsForOfficeService = internalQuery({
       }
     }
 
+    // Exclude score-3 (unrelated) items from feeds.
+    // Unscored items pass through (fail-open per D001).
+    const scoredItems = [...guidMap.values()].filter(
+      (item) => item.relevanceScore !== 3
+    );
+
     // Split deduplicated dynamic items into featured (location-service scoped) and general
     const featuredDynamic: (typeof dynamicItems)[0][] = [];
     const generalDynamic: (typeof dynamicItems)[0][] = [];
 
-    for (const item of guidMap.values()) {
+    for (const item of scoredItems) {
       if (item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">)) {
         featuredDynamic.push(item);
       } else {

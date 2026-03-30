@@ -70,6 +70,19 @@ export const updateItemContent = internalMutation({
   },
 });
 
+export const updateItemRelevanceScore = internalMutation({
+  args: {
+    itemId: v.id("feedItems"),
+    relevanceScore: v.number(),
+  },
+  handler: async (ctx, { itemId, relevanceScore }) => {
+    await ctx.db.patch(itemId, {
+      relevanceScore,
+      relevanceScoredAt: Date.now(),
+    });
+  },
+});
+
 export const markFetchError = internalMutation({
   args: {
     sourceId: v.id("sources"),

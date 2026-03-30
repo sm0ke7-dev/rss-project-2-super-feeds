@@ -61,6 +61,13 @@ export const aggregateFeed = internalAction({
         console.error("Content extraction failed (non-fatal):", extractErr);
       }
 
+      // Score new items for relevance (non-blocking — don't let scoring failures kill the feed run)
+      try {
+        await ctx.runAction(internal.actions.scoreRelevance.scoreRelevanceBatch, {});
+      } catch (scoreErr) {
+        console.error("Relevance scoring failed (non-fatal):", scoreErr);
+      }
+
       // Generate feed files (proceeds even if some sources failed)
       await ctx.runAction(internal.actions.generateFeed.generateFeedFiles, {
         officeId,
@@ -153,6 +160,13 @@ export const runFullRefresh = internalAction({
       await ctx.runAction(internal.actions.extractContent.extractContentBatch, {});
     } catch (extractErr) {
       console.error("Content extraction failed (non-fatal):", extractErr);
+    }
+
+    // Phase 2.5: Score new items for relevance (once, shared across all feeds)
+    try {
+      await ctx.runAction(internal.actions.scoreRelevance.scoreRelevanceBatch, {});
+    } catch (scoreErr) {
+      console.error("Relevance scoring failed (non-fatal):", scoreErr);
     }
 
     // Phase 3: Generate all feeds via aggregateFeed with skipFetch=true (creates feed run records)

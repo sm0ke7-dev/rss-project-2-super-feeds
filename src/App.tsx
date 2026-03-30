@@ -12,6 +12,7 @@ import StaticItemsPage from "./pages/StaticItemsPage";
 import SourcesPage from "./pages/SourcesPage";
 import FeedRunsPage from "./pages/FeedRunsPage";
 import FeedBrowserPage from "./pages/FeedBrowserPage";
+import FeedItemsPage from "./pages/FeedItemsPage";
 import ManualTriggerPage from "./pages/ManualTriggerPage";
 import { Id } from "../convex/_generated/dataModel";
 
@@ -103,6 +104,7 @@ export default function App() {
         services: <ServicesPage />,
         "static-items": <StaticItemsPage />,
         sources: <SourcesPage />,
+        "feed-items": <FeedItemsPage />,
         "feed-runs": <FeedRunsPage />,
         "feed-browser": <FeedBrowserPage />,
         trigger: <ManualTriggerPage />,

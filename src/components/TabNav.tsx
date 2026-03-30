@@ -5,6 +5,7 @@ const TABS = [
   { id: "services", label: "Services" },
   { id: "static-items", label: "Static Items" },
   { id: "sources", label: "Sources" },
+  { id: "feed-items", label: "Feed Items" },
   { id: "feed-runs", label: "Feed Runs" },
   { id: "feed-browser", label: "Feed Browser" },
   { id: "trigger", label: "Manual Trigger" },

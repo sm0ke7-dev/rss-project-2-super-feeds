@@ -1,6 +1,23 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    const items = await ctx.db.query("feedItems").order("desc").take(200);
+    return items.map((item) => ({
+      _id: item._id,
+      title: item.title,
+      link: item.link,
+      schemaType: item.schemaType,
+      relevanceScore: item.relevanceScore,
+      relevanceScoredAt: item.relevanceScoredAt,
+      isoDate: item.isoDate,
+      sourceId: item.sourceId,
+    }));
+  },
+});
+
 export const purgeOrphaned = mutation({
   args: {},
   handler: async (ctx) => {

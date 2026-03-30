@@ -104,6 +104,8 @@ export default defineSchema({
     locationId: v.optional(v.id("locations")),
     fullContent: v.optional(v.string()),
     contentExtractedAt: v.optional(v.number()),
+    relevanceScore: v.optional(v.number()),
+    relevanceScoredAt: v.optional(v.number()),
   })
     .index("by_source", ["sourceId"])
     .index("by_guid", ["guid"])
