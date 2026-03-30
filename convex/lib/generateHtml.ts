@@ -47,9 +47,21 @@ function renderItem(item: FeedPageItem): string {
 
   const rawBodyText = item.fullContent ?? item.description;
   const bodyText = rawBodyText ? stripHtml(rawBodyText) : undefined;
-  const descHtml = bodyText
-    ? `\n    <div class="sf-item-body">\n      ${escapeXml(bodyText)}\n    </div>`
-    : "";
+  let descHtml = "";
+  if (bodyText) {
+    const words = bodyText.split(/\s+/).filter(Boolean);
+    if (words.length <= 50) {
+      descHtml = `\n    <div class="sf-item-body">\n      ${escapeXml(bodyText)}\n    </div>`;
+    } else {
+      const truncated = words.slice(0, 50).join(" ") + "\u2026";
+      descHtml = `
+    <div class="sf-item-body">
+      <span class="sf-excerpt-short">${escapeXml(truncated)}</span>
+      <span class="sf-excerpt-full" hidden>${escapeXml(bodyText)}</span>
+      <button class="sf-toggle-btn">Read more</button>
+    </div>`;
+    }
+  }
 
   const metaHtml = dateStr
     ? `
@@ -307,6 +319,23 @@ export function generateFeedHtml(
       margin-top: 8px;
     }
 
+    .sf-excerpt-full[hidden] { display: none; }
+
+    .sf-toggle-btn {
+      background: none;
+      border: none;
+      color: var(--sf-link-color);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .sf-toggle-btn:hover {
+      text-decoration: underline;
+    }
+
     .sf-nap {
       font-size: 13px;
       color: var(--sf-meta-color);
@@ -368,6 +397,21 @@ export function generateFeedHtml(
     ${featuredSectionHtml}
     ${generalSectionHtml}
   </section>
+  <script>
+    document.querySelector('.sf-feed').addEventListener('click', function(e) {
+      var btn = e.target.closest('.sf-toggle-btn');
+      if (!btn) return;
+      var body = btn.closest('.sf-item-body');
+      if (!body) return;
+      var short = body.querySelector('.sf-excerpt-short');
+      var full = body.querySelector('.sf-excerpt-full');
+      if (!short || !full) return;
+      var isExpanded = !full.hidden;
+      short.hidden = !isExpanded;
+      full.hidden = isExpanded;
+      btn.textContent = isExpanded ? 'Read more' : 'Show less';
+    });
+  </script>
 </body>
 </html>`;
 }
