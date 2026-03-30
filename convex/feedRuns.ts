@@ -1,4 +1,5 @@
 import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 
 export const list = query({
   args: {},
@@ -15,5 +16,21 @@ export const clearAll = mutation({
     const runs = await ctx.db.query("feed_runs").collect();
     for (const run of runs) await ctx.db.delete(run._id);
     return { deleted: runs.length };
+  },
+});
+
+export const getRunningForCombo = query({
+  args: {
+    locationId: v.id("locations"),
+    serviceId: v.id("services"),
+  },
+  handler: async (ctx, { locationId, serviceId }) => {
+    return await ctx.db
+      .query("feed_runs")
+      .withIndex("by_location_service", (q) =>
+        q.eq("locationId", locationId).eq("serviceId", serviceId)
+      )
+      .filter((q) => q.eq(q.field("status"), "running"))
+      .first();
   },
 });

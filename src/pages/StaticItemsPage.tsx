@@ -66,28 +66,33 @@ export default function StaticItemsPage() {
 
   async function handleSubmit() {
     if (!form.title.trim() || !form.url.trim()) return;
-    const publishedAt = new Date(form.publishedAt).getTime();
-    if (editingId) {
-      await updateItem({
-        id: editingId,
-        title: form.title,
-        url: form.url,
-        description: form.description,
-        type: form.type,
-        ...(form.serviceId ? { serviceId: form.serviceId as Id<"services"> } : {}),
-        publishedAt,
-      });
-    } else {
-      await createItem({
-        title: form.title,
-        url: form.url,
-        description: form.description,
-        type: form.type,
-        ...(form.serviceId ? { serviceId: form.serviceId as Id<"services"> } : {}),
-        publishedAt,
-      });
+    try {
+      const publishedAt = new Date(form.publishedAt).getTime();
+      const serviceId = form.serviceId ? (form.serviceId as Id<"services">) : undefined;
+      if (editingId) {
+        await updateItem({
+          id: editingId,
+          title: form.title,
+          url: form.url,
+          description: form.description,
+          type: form.type,
+          serviceId,
+          publishedAt,
+        });
+      } else {
+        await createItem({
+          title: form.title,
+          url: form.url,
+          description: form.description,
+          type: form.type,
+          serviceId,
+          publishedAt,
+        });
+      }
+      closeModal();
+    } catch (err) {
+      console.error("Failed to save static item:", err);
     }
-    closeModal();
   }
 
   async function handleDelete(id: Id<"static_items">) {

@@ -222,7 +222,7 @@ export const getFeedItemsForOfficeService = internalQuery({
     const generalDynamic: (typeof dynamicItems)[0][] = [];
 
     for (const item of scoredItems) {
-      if (item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">)) {
+      if (item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1) {
         featuredDynamic.push(item);
       } else {
         generalDynamic.push(item);

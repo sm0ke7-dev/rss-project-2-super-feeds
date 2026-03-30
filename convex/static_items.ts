@@ -24,7 +24,7 @@ export const create = mutation({
       url: args.url,
       description: args.description,
       type: args.type,
-      serviceId: args.serviceId,
+      ...(args.serviceId !== undefined ? { serviceId: args.serviceId } : {}),
       publishedAt: args.publishedAt,
     });
   },
