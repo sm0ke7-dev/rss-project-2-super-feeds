@@ -31,6 +31,39 @@ export function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+export interface WebFeedInput {
+  title: string;
+  url: string;
+  items: Array<{ title: string; link: string }>;
+}
+
+export function generateWebFeedRss(feed: WebFeedInput, feedUrl: string): string {
+  const lastBuildDate = new Date().toUTCString();
+
+  const itemsXml = feed.items
+    .map(
+      (item) => `
+    <item>
+      <title><![CDATA[${item.title}]]></title>
+      <link>${escapeXml(item.link)}</link>
+      <guid isPermaLink="true">${escapeXml(item.link)}</guid>
+    </item>`
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[${feed.title}]]></title>
+    <link>${escapeXml(feed.url)}</link>
+    <description><![CDATA[RSS feed generated from ${feed.title}]]></description>
+    <lastBuildDate>${escapeXml(lastBuildDate)}</lastBuildDate>
+    <atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />
+${itemsXml}
+  </channel>
+</rss>`;
+}
+
 export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
   const feedUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.locationSlug}/${meta.serviceSlug}/feed.xml`;
   const feedHtmlUrl = `${meta.feedBaseUrl}/feeds/${meta.officeSlug}/${meta.locationSlug}/${meta.serviceSlug}/feed.html`;

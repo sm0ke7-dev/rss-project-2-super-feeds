@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { generateWebFeedRss } from "./lib/generateRss";
 
 const http = httpRouter();
 
@@ -159,6 +160,70 @@ http.route({
     return new Response(html, {
       status: 200,
       headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=86400" },
+    });
+  }),
+});
+
+// --- Generated web feeds ---
+
+const GENERATED_PATH_RE = /^\/generated\/([a-z0-9]+)\/feed\.xml$/;
+
+// CORS preflight for generated feeds
+http.route({
+  pathPrefix: "/generated/",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }),
+});
+
+// Serve generated web feed RSS XML
+http.route({
+  pathPrefix: "/generated/",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const url = new URL(request.url);
+    const match = url.pathname.match(GENERATED_PATH_RE);
+
+    if (!match) {
+      return new Response("Not found", {
+        status: 404,
+        headers: { "Content-Type": "text/plain", ...corsHeaders },
+      });
+    }
+
+    const rawId = match[1];
+
+    let feed;
+    try {
+      feed = await ctx.runQuery(internal.webFeeds.getById, {
+        id: rawId as any,
+      });
+    } catch {
+      // Invalid ID format — Convex throws on malformed IDs
+      return new Response("Not found", {
+        status: 404,
+        headers: { "Content-Type": "text/plain", ...corsHeaders },
+      });
+    }
+
+    if (!feed) {
+      return new Response("Not found", {
+        status: 404,
+        headers: { "Content-Type": "text/plain", ...corsHeaders },
+      });
+    }
+
+    const feedUrl = `${url.origin}/generated/${rawId}/feed.xml`;
+    const xml = generateWebFeedRss(feed, feedUrl);
+
+    return new Response(xml, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/rss+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=1800",
+        ...corsHeaders,
+      },
     });
   }),
 });
