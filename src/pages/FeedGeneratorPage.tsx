@@ -16,10 +16,14 @@ export default function FeedGeneratorPage() {
   const removeFeed = useMutation(api.webFeeds.remove);
   const scrapeUrl = useAction(api.actions.scrapeUrl.scrapeUrl);
 
+  const convexUrl = import.meta.env.VITE_CONVEX_URL as string;
+  const siteBase = convexUrl?.replace(".convex.cloud", ".convex.site") ?? "";
+
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScrapeResult | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Save flow
   const [showSaveForm, setShowSaveForm] = useState(false);
@@ -88,6 +92,13 @@ export default function FeedGeneratorPage() {
   async function handleDelete(id: Id<"web_feeds">) {
     if (!confirm("Delete this web feed? This cannot be undone.")) return;
     await removeFeed({ id });
+  }
+
+  function handleCopyRssUrl(feedId: string) {
+    const rssUrl = `${siteBase}/generated/${feedId}/feed.xml`;
+    navigator.clipboard.writeText(rssUrl);
+    setCopiedId(feedId);
+    setTimeout(() => setCopiedId((prev) => (prev === feedId ? null : prev)), 2000);
   }
 
   return (
@@ -264,6 +275,7 @@ export default function FeedGeneratorPage() {
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">URL</th>
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">Items</th>
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">Last Scraped</th>
+                  <th className="text-left px-4 py-2 text-gray-600 font-medium">RSS URL</th>
                   <th className="text-left px-4 py-2 text-gray-600 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -285,6 +297,19 @@ export default function FeedGeneratorPage() {
                     <td className="px-4 py-2 text-gray-500">{feed.scrapedItemCount}</td>
                     <td className="px-4 py-2 text-gray-500 text-xs">
                       {feed.lastScrapedAt ? new Date(feed.lastScrapedAt).toLocaleString() : "—"}
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => handleCopyRssUrl(feed._id)}
+                        className={`text-xs font-medium transition-colors ${
+                          copiedId === feed._id
+                            ? "text-green-600"
+                            : "text-blue-600 hover:text-blue-800"
+                        }`}
+                        title={`${siteBase}/generated/${feed._id}/feed.xml`}
+                      >
+                        {copiedId === feed._id ? "Copied!" : "Copy URL"}
+                      </button>
                     </td>
                     <td className="px-4 py-2">
                       <button

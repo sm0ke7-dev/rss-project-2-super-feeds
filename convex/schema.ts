@@ -156,6 +156,7 @@ export default defineSchema({
     ),
     lastScrapedAt: v.number(),
     scrapedItemCount: v.number(),
+    sourceId: v.optional(v.id("sources")),
   })
     .index("by_url", ["url"]),
 });

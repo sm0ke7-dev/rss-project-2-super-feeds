@@ -12,6 +12,7 @@ import type * as actions_aggregation from "../actions/aggregation.js";
 import type * as actions_extractContent from "../actions/extractContent.js";
 import type * as actions_fetchSource from "../actions/fetchSource.js";
 import type * as actions_generateFeed from "../actions/generateFeed.js";
+import type * as actions_rescrapeWebFeeds from "../actions/rescrapeWebFeeds.js";
 import type * as actions_scoreRelevance from "../actions/scoreRelevance.js";
 import type * as actions_scrapeUrl from "../actions/scrapeUrl.js";
 import type * as crons from "../crons.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "actions/extractContent": typeof actions_extractContent;
   "actions/fetchSource": typeof actions_fetchSource;
   "actions/generateFeed": typeof actions_generateFeed;
+  "actions/rescrapeWebFeeds": typeof actions_rescrapeWebFeeds;
   "actions/scoreRelevance": typeof actions_scoreRelevance;
   "actions/scrapeUrl": typeof actions_scrapeUrl;
   crons: typeof crons;

@@ -96,6 +96,13 @@ export const aggregateFeed = internalAction({
 export const runAggregationCycle = internalAction({
   args: {},
   handler: async (ctx) => {
+    // Re-scrape web feeds so their RSS endpoints serve fresh items
+    try {
+      await ctx.runAction(internal.actions.rescrapeWebFeeds.rescrapeWebFeeds, {});
+    } catch (rescrapeErr) {
+      console.error("Web feed rescrape failed (non-fatal):", rescrapeErr);
+    }
+
     const combinations = await ctx.runQuery(
       internal.queries.feeds.getAllFeedCombinations
     );
@@ -129,6 +136,13 @@ export const runAggregationCycle = internalAction({
 export const runFullRefresh = internalAction({
   args: {},
   handler: async (ctx) => {
+    // Re-scrape web feeds so their RSS endpoints serve fresh items
+    try {
+      await ctx.runAction(internal.actions.rescrapeWebFeeds.rescrapeWebFeeds, {});
+    } catch (rescrapeErr) {
+      console.error("Web feed rescrape failed (non-fatal):", rescrapeErr);
+    }
+
     const [combinations, allSources] = await Promise.all([
       ctx.runQuery(internal.queries.feeds.getAllFeedCombinations),
       ctx.runQuery(internal.queries.sources.getAllActiveSources),
