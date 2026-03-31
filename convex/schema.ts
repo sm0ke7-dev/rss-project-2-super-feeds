@@ -144,4 +144,18 @@ export default defineSchema({
     itemCount: v.number(),
   })
     .index("by_slugs", ["officeSlug", "locationSlug", "serviceSlug"]),
+
+  web_feeds: defineTable({
+    url: v.string(),
+    title: v.string(),
+    items: v.array(
+      v.object({
+        title: v.string(),
+        link: v.string(),
+      })
+    ),
+    lastScrapedAt: v.number(),
+    scrapedItemCount: v.number(),
+  })
+    .index("by_url", ["url"]),
 });

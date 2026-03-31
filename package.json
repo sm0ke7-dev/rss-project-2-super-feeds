@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.726.0",
     "@extractus/article-extractor": "^8.0.20",
+    "cheerio": "^1.2.0",
     "convex": "^1.17.0",
     "openai": "^6.33.0",
     "p-limit": "^7.3.0",

@@ -13,6 +13,7 @@ import type * as actions_extractContent from "../actions/extractContent.js";
 import type * as actions_fetchSource from "../actions/fetchSource.js";
 import type * as actions_generateFeed from "../actions/generateFeed.js";
 import type * as actions_scoreRelevance from "../actions/scoreRelevance.js";
+import type * as actions_scrapeUrl from "../actions/scrapeUrl.js";
 import type * as crons from "../crons.js";
 import type * as feedItems from "../feedItems.js";
 import type * as feedRuns from "../feedRuns.js";
@@ -42,6 +43,7 @@ import type * as seed from "../seed.js";
 import type * as services from "../services.js";
 import type * as sources from "../sources.js";
 import type * as static_items from "../static_items.js";
+import type * as webFeeds from "../webFeeds.js";
 
 import type {
   ApiFromModules,
@@ -55,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "actions/fetchSource": typeof actions_fetchSource;
   "actions/generateFeed": typeof actions_generateFeed;
   "actions/scoreRelevance": typeof actions_scoreRelevance;
+  "actions/scrapeUrl": typeof actions_scrapeUrl;
   crons: typeof crons;
   feedItems: typeof feedItems;
   feedRuns: typeof feedRuns;
@@ -84,6 +87,7 @@ declare const fullApi: ApiFromModules<{
   services: typeof services;
   sources: typeof sources;
   static_items: typeof static_items;
+  webFeeds: typeof webFeeds;
 }>;
 
 /**
