@@ -9,6 +9,7 @@ const TABS = [
   { id: "feed-runs", label: "Feed Runs" },
   { id: "feed-browser", label: "Feed Browser" },
   { id: "trigger", label: "Manual Trigger" },
+  { id: "feed-generator", label: "Feed Generator" },
 ] as const;
 
 export type TabId = typeof TABS[number]["id"];

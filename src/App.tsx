@@ -14,6 +14,7 @@ import FeedRunsPage from "./pages/FeedRunsPage";
 import FeedBrowserPage from "./pages/FeedBrowserPage";
 import FeedItemsPage from "./pages/FeedItemsPage";
 import ManualTriggerPage from "./pages/ManualTriggerPage";
+import FeedGeneratorPage from "./pages/FeedGeneratorPage";
 import { Id } from "../convex/_generated/dataModel";
 
 export default function App() {
@@ -108,6 +109,7 @@ export default function App() {
         "feed-runs": <FeedRunsPage />,
         "feed-browser": <FeedBrowserPage />,
         trigger: <ManualTriggerPage />,
+        "feed-generator": <FeedGeneratorPage />,
       }[activeTab as Exclude<TabId, "dashboard">];
 
   return (
