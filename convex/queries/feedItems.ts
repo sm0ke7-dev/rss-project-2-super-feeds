@@ -135,6 +135,15 @@ export const getFeedItemsForOfficeService = internalQuery({
     // Build a Set of IDs for location-service scoped sources (featured bucket)
     const locationServiceSourceIds = new Set(locationServiceScoped.map((s) => s._id));
 
+    // Build a Set of IDs for all location-relevant sources — videos from these
+    // are promoted to Featured so the round-robin interleave can mix types
+    const locationRelevantSourceIds = new Set([
+      ...locationServiceScoped,
+      ...locationScoped,
+      ...officeServiceScoped,
+      ...officeScoped,
+    ].map((s) => s._id));
+
     const allSources = [
       ...globals,
       ...serviceScoped,
@@ -232,7 +241,11 @@ export const getFeedItemsForOfficeService = internalQuery({
     for (const item of scoredItems) {
       const isBrand = item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">);
       const isLocationServiceScored = item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1;
-      if (isBrand || isLocationServiceScored) {
+      // Promote videos from any location-relevant source into Featured
+      const isLocationVideo = item.schemaType === "VideoObject"
+        && item.sourceId
+        && locationRelevantSourceIds.has(item.sourceId as Id<"sources">);
+      if (isBrand || isLocationServiceScored || isLocationVideo) {
         featuredDynamic.push(item);
       } else {
         generalDynamic.push(item);

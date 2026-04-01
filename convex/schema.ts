@@ -97,8 +97,11 @@ export default defineSchema({
     schemaType: v.union(
       v.literal("VideoObject"),
       v.literal("Article"),
-      v.literal("DigitalDocument")
+      v.literal("DigitalDocument"),
+      v.literal("AudioObject")
     ),
+    artworkUrl: v.optional(v.string()),
+    duration: v.optional(v.string()),
     officeId: v.optional(v.id("offices")),
     serviceId: v.optional(v.id("services")),
     locationId: v.optional(v.id("locations")),

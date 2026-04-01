@@ -19,8 +19,11 @@ export const storeFeedItems = internalMutation({
         schemaType: v.union(
           v.literal("VideoObject"),
           v.literal("Article"),
-          v.literal("DigitalDocument")
+          v.literal("DigitalDocument"),
+          v.literal("AudioObject")
         ),
+        artworkUrl: v.optional(v.string()),
+        duration: v.optional(v.string()),
       })
     ),
   },

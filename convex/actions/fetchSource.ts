@@ -10,6 +10,8 @@ type CustomItemFields = {
   videoId?: string;
   channelId?: string;
   mediaGroup?: Record<string, unknown>;
+  itunesImage?: { "$": { href: string } };
+  itunesDuration?: string;
 };
 
 const youtubeParser = new Parser<Record<string, unknown>, CustomItemFields>({
@@ -19,6 +21,16 @@ const youtubeParser = new Parser<Record<string, unknown>, CustomItemFields>({
       ["yt:videoId", "videoId"],
       ["yt:channelId", "channelId"],
       ["media:group", "mediaGroup"],
+    ],
+  },
+});
+
+const soundcloudParser = new Parser<Record<string, unknown>, CustomItemFields>({
+  timeout: 10000,
+  customFields: {
+    item: [
+      ["itunes:image", "itunesImage"],
+      ["itunes:duration", "itunesDuration"],
     ],
   },
 });
@@ -33,6 +45,7 @@ export const fetchRssSource = internalAction({
   },
   handler: async (ctx, { sourceId, url }) => {
     try {
+      const isSoundCloud = url.includes("feeds.soundcloud.com");
       const isYouTube = url.includes("youtube.com/feeds");
 
       let items: Array<{
@@ -46,10 +59,33 @@ export const fetchRssSource = internalAction({
         channelId?: string;
         thumbnailUrl?: string;
         viewCount?: string;
-        schemaType: "VideoObject" | "Article" | "DigitalDocument";
+        artworkUrl?: string;
+        duration?: string;
+        schemaType: "VideoObject" | "Article" | "DigitalDocument" | "AudioObject";
       }> = [];
 
-      if (isYouTube) {
+      if (isSoundCloud) {
+        const feed = await withRetry(() => soundcloudParser.parseURL(url), 3, 500);
+        items = feed.items.map((item) => {
+          const guid = item.guid ?? item.link ?? item.title ?? "";
+          const artworkUrl = item.itunesImage?.["$"]?.href ?? undefined;
+          const duration = item.itunesDuration ?? undefined;
+          return {
+            guid,
+            title: item.title ?? "(untitled)",
+            link: item.link ?? "",
+            description:
+              (item as unknown as { contentSnippet?: string }).contentSnippet ??
+              (item as unknown as { content?: string }).content ??
+              undefined,
+            pubDate: item.pubDate ?? undefined,
+            isoDate: item.isoDate ?? undefined,
+            artworkUrl,
+            duration,
+            schemaType: "AudioObject" as const,
+          };
+        });
+      } else if (isYouTube) {
         const feed = await withRetry(() => youtubeParser.parseURL(url), 3, 500);
         items = feed.items.map((item) => {
           const mediaGroup = item.mediaGroup as
