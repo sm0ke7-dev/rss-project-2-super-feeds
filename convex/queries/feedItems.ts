@@ -35,18 +35,19 @@ export const getItemsNeedingContent = internalQuery({
   },
 });
 
-// Round-robin interleave: Article → DigitalDocument → VideoObject
+// Round-robin interleave: Article → DigitalDocument → VideoObject → AudioObject
 function roundRobinInterleave<T extends { schemaType: string }>(items: T[]): T[] {
   const buckets: Record<string, T[]> = {
     Article: [],
     DigitalDocument: [],
     VideoObject: [],
+    AudioObject: [],
   };
   for (const item of items) {
     const key = item.schemaType in buckets ? item.schemaType : "Article";
     buckets[key].push(item);
   }
-  const order = ["Article", "DigitalDocument", "VideoObject"];
+  const order = ["Article", "DigitalDocument", "VideoObject", "AudioObject"];
   const interleaved: T[] = [];
   let remaining = true;
   let i = 0;

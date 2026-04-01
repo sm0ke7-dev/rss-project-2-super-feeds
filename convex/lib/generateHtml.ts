@@ -43,7 +43,8 @@ function renderItem(item: FeedPageItem): string {
     : "";
 
   const badgeLabel = item.schemaType === "VideoObject" ? "Video" :
-                     item.schemaType === "DigitalDocument" ? "Document" : "Article";
+                     item.schemaType === "DigitalDocument" ? "Document" :
+                     item.schemaType === "AudioObject" ? "Audio" : "Article";
 
   const rawBodyText = item.fullContent ?? item.description;
   const bodyText = rawBodyText ? stripHtml(rawBodyText) : undefined;

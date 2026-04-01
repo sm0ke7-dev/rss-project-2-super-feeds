@@ -59,6 +59,8 @@ export const generateFeedFiles = internalAction({
       isoDate: item.isoDate,
       videoId: item.videoId,
       thumbnailUrl: item.thumbnailUrl,
+      artworkUrl: item.artworkUrl,
+      duration: item.duration,
       schemaType: item.schemaType,
     }));
 
@@ -71,6 +73,8 @@ export const generateFeedFiles = internalAction({
       isoDate: item.isoDate,
       videoId: item.videoId,
       thumbnailUrl: item.thumbnailUrl,
+      artworkUrl: item.artworkUrl,
+      duration: item.duration,
       schemaType: item.schemaType,
       sourceName: item.sourceId ? sourceMap.get(item.sourceId) : undefined,
     });

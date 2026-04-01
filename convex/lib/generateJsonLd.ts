@@ -63,6 +63,28 @@ export function buildArticleLd(input: ArticleLdInput): object {
   };
 }
 
+export interface AudioObjectLdInput {
+  name: string;
+  url: string;
+  description?: string;
+  datePublished?: string;
+  thumbnailUrl?: string;
+  duration?: string;
+}
+
+export function buildAudioObjectLd(input: AudioObjectLdInput): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "AudioObject",
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+    ...(input.datePublished ? { datePublished: input.datePublished } : {}),
+    ...(input.thumbnailUrl ? { thumbnailUrl: input.thumbnailUrl } : {}),
+    ...(input.duration ? { duration: input.duration } : {}),
+  };
+}
+
 export type FeedPageItem = {
   guid: string;
   title: string;
@@ -72,7 +94,9 @@ export type FeedPageItem = {
   isoDate?: string;
   videoId?: string;
   thumbnailUrl?: string;
-  schemaType: "VideoObject" | "Article" | "DigitalDocument";
+  artworkUrl?: string;
+  duration?: string;
+  schemaType: "VideoObject" | "Article" | "DigitalDocument" | "AudioObject";
   sourceName?: string;
 };
 
@@ -105,6 +129,17 @@ export function dispatchJsonLd(item: FeedPageItem): object {
       url: item.link,
       description: item.description,
       datePublished: item.isoDate,
+    });
+  }
+
+  if (item.schemaType === "AudioObject") {
+    return buildAudioObjectLd({
+      name: item.title,
+      url: item.link,
+      description: item.description,
+      datePublished: item.isoDate,
+      thumbnailUrl: item.artworkUrl ?? item.thumbnailUrl,
+      duration: item.duration,
     });
   }
 

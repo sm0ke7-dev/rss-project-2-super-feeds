@@ -19,7 +19,9 @@ export interface FeedItem {
   isoDate?: string;
   videoId?: string;
   thumbnailUrl?: string;
-  schemaType: "VideoObject" | "Article" | "DigitalDocument";
+  artworkUrl?: string;
+  duration?: string;
+  schemaType: "VideoObject" | "Article" | "DigitalDocument" | "AudioObject";
 }
 
 export function escapeXml(str: string): string {
@@ -101,6 +103,12 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
     const contentEncodedXml = item.fullContent
       ? `<content:encoded><![CDATA[${item.fullContent}]]></content:encoded>`
       : "";
+    const itunesImageXml = item.artworkUrl
+      ? `<itunes:image href="${escapeXml(item.artworkUrl)}" />`
+      : "";
+    const itunesDurationXml = item.duration
+      ? `<itunes:duration>${escapeXml(item.duration)}</itunes:duration>`
+      : "";
 
     return `
     <item>
@@ -111,6 +119,8 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
       ${descriptionXml}
       ${contentEncodedXml}
       ${mediaThumb}
+      ${itunesImageXml}
+      ${itunesDurationXml}
     </item>`;
   }).join("\n");
 
@@ -118,7 +128,8 @@ export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {
 <rss version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
   xmlns:media="http://search.yahoo.com/mrss/"
-  xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
   <channel>
     <title><![CDATA[${feedTitle}]]></title>
     <link>${escapeXml(feedHtmlUrl)}</link>
