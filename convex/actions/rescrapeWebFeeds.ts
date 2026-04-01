@@ -4,6 +4,7 @@ import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import * as cheerio from "cheerio";
 import pLimit from "p-limit";
+import Parser from "rss-parser";
 
 /** Paths that are unlikely to be article links (mirrored from scrapeUrl.ts). */
 const NON_ARTICLE_PATHS = [
@@ -23,6 +24,53 @@ const NON_ARTICLE_PATHS = [
 ];
 
 const MAX_ITEMS = 100;
+
+// --- YouTube Atom feed parser ---
+
+type YouTubeCustomItem = {
+  videoId?: string;
+  channelId?: string;
+  mediaGroup?: Record<string, unknown>;
+};
+
+const youtubeParser = new Parser<Record<string, unknown>, YouTubeCustomItem>({
+  timeout: 10000,
+  customFields: {
+    item: [
+      ["yt:videoId", "videoId"],
+      ["yt:channelId", "channelId"],
+      ["media:group", "mediaGroup"],
+    ],
+  },
+});
+
+/** Map a parsed YouTube Atom item to the enriched web-feed item shape. */
+function mapYouTubeItem(item: Parser.Item & YouTubeCustomItem): {
+  title: string;
+  link: string;
+  thumbnailUrl?: string;
+  description?: string;
+  publishedAt?: string;
+} {
+  const mediaGroup = item.mediaGroup as Record<string, unknown> | undefined;
+  const mediaThumbnail = mediaGroup?.["media:thumbnail"] as
+    | Record<string, unknown>
+    | undefined;
+  const thumbnailUrl = (mediaThumbnail?.["$"] as Record<string, string> | undefined)?.url;
+
+  const description =
+    (item as unknown as { contentSnippet?: string }).contentSnippet ??
+    (item as unknown as { content?: string }).content ??
+    undefined;
+
+  return {
+    title: item.title ?? "(untitled)",
+    link: item.link ?? "",
+    thumbnailUrl,
+    description,
+    publishedAt: item.isoDate ?? item.pubDate ?? undefined,
+  };
+}
 
 /**
  * Extract article links from raw HTML, resolving relative URLs against baseUrl.
@@ -106,6 +154,35 @@ export const rescrapeWebFeeds = internalAction({
     const results = await Promise.allSettled(
       feeds.map((feed) =>
         limit(async () => {
+          // --- YouTube feeds: use rss-parser on the Atom endpoint ---
+          if (feed.feedType === "youtube") {
+            const listId = new URL(feed.url).searchParams.get("list");
+            if (!listId) {
+              throw new Error(
+                `YouTube feed ${feed.url} has no list= param; skipping`
+              );
+            }
+
+            const atomUrl = `https://www.youtube.com/feeds/videos.xml?playlist_id=${listId}`;
+            const parsedFeed = await youtubeParser.parseURL(atomUrl);
+            const items = parsedFeed.items
+              .slice(0, MAX_ITEMS)
+              .map(mapYouTubeItem);
+
+            await ctx.runMutation(internal.webFeeds.updateItems, {
+              id: feed._id,
+              items,
+              scrapedItemCount: items.length,
+              lastScrapedAt: Date.now(),
+            });
+
+            console.log(
+              `rescrapeWebFeeds (youtube): ${feed.url} → ${items.length} item(s)`
+            );
+            return;
+          }
+
+          // --- Non-YouTube feeds: HTML scrape via Cheerio ---
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15_000);
 

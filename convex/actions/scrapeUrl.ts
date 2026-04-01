@@ -3,6 +3,7 @@
 import { action } from "../_generated/server";
 import { v } from "convex/values";
 import * as cheerio from "cheerio";
+import Parser from "rss-parser";
 
 /** Paths that are unlikely to be article links. */
 const NON_ARTICLE_PATHS = [
@@ -22,6 +23,53 @@ const NON_ARTICLE_PATHS = [
 ];
 
 const MAX_ITEMS = 100;
+
+// --- YouTube Atom feed parser ---
+
+type YouTubeCustomItem = {
+  videoId?: string;
+  channelId?: string;
+  mediaGroup?: Record<string, unknown>;
+};
+
+const youtubeParser = new Parser<Record<string, unknown>, YouTubeCustomItem>({
+  timeout: 10000,
+  customFields: {
+    item: [
+      ["yt:videoId", "videoId"],
+      ["yt:channelId", "channelId"],
+      ["media:group", "mediaGroup"],
+    ],
+  },
+});
+
+/** Map a parsed YouTube Atom item to the enriched web-feed item shape. */
+function mapYouTubeItem(item: Parser.Item & YouTubeCustomItem): {
+  title: string;
+  link: string;
+  thumbnailUrl?: string;
+  description?: string;
+  publishedAt?: string;
+} {
+  const mediaGroup = item.mediaGroup as Record<string, unknown> | undefined;
+  const mediaThumbnail = mediaGroup?.["media:thumbnail"] as
+    | Record<string, unknown>
+    | undefined;
+  const thumbnailUrl = (mediaThumbnail?.["$"] as Record<string, string> | undefined)?.url;
+
+  const description =
+    (item as unknown as { contentSnippet?: string }).contentSnippet ??
+    (item as unknown as { content?: string }).content ??
+    undefined;
+
+  return {
+    title: item.title ?? "(untitled)",
+    link: item.link ?? "",
+    thumbnailUrl,
+    description,
+    publishedAt: item.isoDate ?? item.pubDate ?? undefined,
+  };
+}
 
 export const scrapeUrl = action({
   args: { url: v.string() },
@@ -46,7 +94,31 @@ export const scrapeUrl = action({
       };
     }
 
-    // --- Fetch page HTML ---
+    // --- YouTube playlist detection ---
+    // Matches both /playlist?list=X and /watch?v=Y&list=X forms
+    const isYouTube =
+      (parsed.hostname === "youtube.com" || parsed.hostname === "www.youtube.com") &&
+      parsed.searchParams.get("list") !== null;
+
+    if (isYouTube) {
+      const listId = parsed.searchParams.get("list")!;
+      const atomUrl = `https://www.youtube.com/feeds/videos.xml?playlist_id=${listId}`;
+
+      try {
+        const feed = await youtubeParser.parseURL(atomUrl);
+        const items = feed.items.slice(0, MAX_ITEMS).map(mapYouTubeItem);
+        const warnings: string[] = [];
+        if (items.length === 0) {
+          warnings.push("YouTube playlist has no videos.");
+        }
+        return { items, warnings, feedType: "youtube" as const };
+      } catch (err: unknown) {
+        const msg = `Failed to fetch YouTube playlist: ${err instanceof Error ? err.message : String(err)}`;
+        return { items: [], warnings: [msg] };
+      }
+    }
+
+    // --- Fetch page HTML (non-YouTube path) ---
     let html: string;
     try {
       const controller = new AbortController();
