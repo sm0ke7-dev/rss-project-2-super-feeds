@@ -3,6 +3,11 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
+function truncateWords(text: string, max = 50): string {
+  const words = text.split(/\s+/);
+  return words.length > max ? words.slice(0, max).join(' ') + '…' : text;
+}
+
 type ScrapedItem = {
   title: string;
   link: string;
@@ -228,36 +233,78 @@ export default function FeedGeneratorPage() {
 
           {/* Article list */}
           {result.items.length > 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden max-h-96 overflow-y-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                  <tr>
-                    <th className="text-left px-4 py-2 text-gray-600 font-medium w-8">#</th>
-                    <th className="text-left px-4 py-2 text-gray-600 font-medium">Title</th>
-                    <th className="text-left px-4 py-2 text-gray-600 font-medium">Link</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.items.map((item, i) => (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="px-4 py-2 text-gray-400">{i + 1}</td>
-                      <td className="px-4 py-2 text-gray-800 font-medium">{item.title}</td>
-                      <td className="px-4 py-2">
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline truncate block max-w-xs"
-                          title={item.link}
-                        >
-                          {item.link}
-                        </a>
-                      </td>
+            result.feedType === 'youtube' ? (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden max-h-96 overflow-y-auto">
+                {result.items.map((item, i) => (
+                  <div key={i} className={`flex gap-3 p-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
+                    {/* Thumbnail */}
+                    {item.thumbnailUrl ? (
+                      <img
+                        src={item.thumbnailUrl}
+                        alt={item.title}
+                        className="flex-shrink-0 w-40 aspect-video object-cover rounded"
+                      />
+                    ) : (
+                      <div className="flex-shrink-0 w-40 aspect-video bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
+                        No thumbnail
+                      </div>
+                    )}
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-gray-800 hover:text-blue-600 hover:underline block mb-1 leading-snug"
+                      >
+                        {item.title}
+                      </a>
+                      {item.description && (
+                        <p className="text-sm text-gray-500 mb-1 leading-snug">
+                          {truncateWords(item.description, 50)}
+                        </p>
+                      )}
+                      {item.publishedAt && (
+                        <p className="text-xs text-gray-400">
+                          {new Date(item.publishedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden max-h-96 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                    <tr>
+                      <th className="text-left px-4 py-2 text-gray-600 font-medium w-8">#</th>
+                      <th className="text-left px-4 py-2 text-gray-600 font-medium">Title</th>
+                      <th className="text-left px-4 py-2 text-gray-600 font-medium">Link</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {result.items.map((item, i) => (
+                      <tr key={i} className="border-t border-gray-100">
+                        <td className="px-4 py-2 text-gray-400">{i + 1}</td>
+                        <td className="px-4 py-2 text-gray-800 font-medium">{item.title}</td>
+                        <td className="px-4 py-2">
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline truncate block max-w-xs"
+                            title={item.link}
+                          >
+                            {item.link}
+                          </a>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
           ) : (
             <p className="text-gray-400 text-sm">No articles found on this page.</p>
           )}
