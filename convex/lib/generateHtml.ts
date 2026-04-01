@@ -21,10 +21,11 @@ function renderItem(item: FeedPageItem): string {
     : "";
   const datetimeAttr = item.isoDate ? ` datetime="${escapeXml(item.isoDate)}"` : "";
 
-  const thumbHtml = item.thumbnailUrl
+  const thumbSrc = item.thumbnailUrl ?? item.artworkUrl;
+  const thumbHtml = thumbSrc
     ? `
     <figure class="sf-item-thumb">
-      <img src="${escapeXml(item.thumbnailUrl)}" alt="${escapeXml(item.title)}" loading="lazy" />
+      <img src="${escapeXml(thumbSrc)}" alt="${escapeXml(item.title)}" loading="lazy" />
     </figure>`
     : "";
 
@@ -64,10 +65,14 @@ function renderItem(item: FeedPageItem): string {
     }
   }
 
-  const metaHtml = dateStr
+  const durationHtml = item.duration
+    ? `<span class="sf-item-duration">${escapeXml(item.duration)}</span>`
+    : "";
+
+  const metaHtml = (dateStr || durationHtml)
     ? `
     <p class="sf-item-meta">
-      <time${datetimeAttr}>${escapeXml(dateStr)}</time>
+      ${dateStr ? `<time${datetimeAttr}>${escapeXml(dateStr)}</time>` : ""}${durationHtml ? ` ${durationHtml}` : ""}
     </p>`
     : "";
 
@@ -309,6 +314,12 @@ export function generateFeedHtml(
 
     .sf-item-meta {
       margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--sf-meta-color);
+    }
+
+    .sf-item-duration {
+      margin-left: 8px;
       font-size: 12px;
       color: var(--sf-meta-color);
     }
