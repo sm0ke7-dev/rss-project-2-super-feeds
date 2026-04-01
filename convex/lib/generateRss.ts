@@ -34,25 +34,41 @@ export function escapeXml(str: string): string {
 export interface WebFeedInput {
   title: string;
   url: string;
-  items: Array<{ title: string; link: string }>;
+  items: Array<{
+    title: string;
+    link: string;
+    thumbnailUrl?: string;
+    description?: string;
+    publishedAt?: string;
+  }>;
 }
 
 export function generateWebFeedRss(feed: WebFeedInput, feedUrl: string): string {
   const lastBuildDate = new Date().toUTCString();
 
   const itemsXml = feed.items
-    .map(
-      (item) => `
+    .map((item) => {
+      const pubDateXml = item.publishedAt
+        ? `\n      <pubDate>${escapeXml(item.publishedAt)}</pubDate>`
+        : "";
+      const descriptionXml = item.description
+        ? `\n      <description><![CDATA[${item.description}]]></description>`
+        : "";
+      const mediaThumbXml = item.thumbnailUrl
+        ? `\n      <media:thumbnail url="${escapeXml(item.thumbnailUrl)}" />`
+        : "";
+
+      return `
     <item>
       <title><![CDATA[${item.title}]]></title>
       <link>${escapeXml(item.link)}</link>
-      <guid isPermaLink="true">${escapeXml(item.link)}</guid>
-    </item>`
-    )
+      <guid isPermaLink="true">${escapeXml(item.link)}</guid>${pubDateXml}${descriptionXml}${mediaThumbXml}
+    </item>`;
+    })
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title><![CDATA[${feed.title}]]></title>
     <link>${escapeXml(feed.url)}</link>

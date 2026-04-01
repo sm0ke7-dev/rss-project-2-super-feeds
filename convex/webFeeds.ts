@@ -19,10 +19,14 @@ export const create = mutation({
   args: {
     url: v.string(),
     title: v.string(),
+    feedType: v.optional(v.literal("youtube")),
     items: v.array(
       v.object({
         title: v.string(),
         link: v.string(),
+        thumbnailUrl: v.optional(v.string()),
+        description: v.optional(v.string()),
+        publishedAt: v.optional(v.string()),
       })
     ),
     scrapedItemCount: v.number(),
@@ -32,6 +36,7 @@ export const create = mutation({
     const feedId = await ctx.db.insert("web_feeds", {
       url: args.url,
       title: args.title,
+      feedType: args.feedType,
       items: args.items,
       scrapedItemCount: args.scrapedItemCount,
       lastScrapedAt: args.lastScrapedAt,
@@ -87,7 +92,15 @@ export const listAll = internalQuery({
 export const updateItems = internalMutation({
   args: {
     id: v.id("web_feeds"),
-    items: v.array(v.object({ title: v.string(), link: v.string() })),
+    items: v.array(
+      v.object({
+        title: v.string(),
+        link: v.string(),
+        thumbnailUrl: v.optional(v.string()),
+        description: v.optional(v.string()),
+        publishedAt: v.optional(v.string()),
+      })
+    ),
     scrapedItemCount: v.number(),
     lastScrapedAt: v.number(),
   },
