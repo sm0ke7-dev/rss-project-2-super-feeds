@@ -47,7 +47,7 @@ function roundRobinInterleave<T extends { schemaType: string }>(items: T[]): T[]
     const key = item.schemaType in buckets ? item.schemaType : "Article";
     buckets[key].push(item);
   }
-  const order = ["Article", "DigitalDocument", "VideoObject", "AudioObject"];
+  const order = ["Article", "VideoObject", "DigitalDocument", "AudioObject"];
   const interleaved: T[] = [];
   let remaining = true;
   let i = 0;
@@ -242,10 +242,9 @@ export const getFeedItemsForOfficeService = internalQuery({
     for (const item of scoredItems) {
       const isBrand = item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">);
       const isLocationServiceScored = item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1;
-      // Promote videos from any location-relevant source into Featured
+      // Promote all VideoObject items into Featured (unless irrelevant, i.e. score 3)
       const isLocationVideo = item.schemaType === "VideoObject"
-        && item.sourceId
-        && locationRelevantSourceIds.has(item.sourceId as Id<"sources">);
+        && item.relevanceScore !== 3;
       if (isBrand || isLocationServiceScored || isLocationVideo) {
         featuredDynamic.push(item);
       } else {
@@ -268,7 +267,7 @@ export const getFeedItemsForOfficeService = internalQuery({
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
 
     // Service-scoped static items go into featured (up to 5 total), global static into general
-    const featuredAll = shuffle([...shuffledFeatured, ...brandStaticItems]).slice(0, 5);
+    const featuredAll = shuffle([...shuffledFeatured, ...brandStaticItems]).slice(0, 10);
     const generalAll = shuffle([...shuffledGeneral, ...nonBrandStaticItems]);
 
     // Apply round-robin interleave to each bucket separately

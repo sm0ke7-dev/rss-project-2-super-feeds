@@ -167,11 +167,11 @@ export function generateFeedHtml(
     </nav>`
     : "";
 
-  // Section 1: Featured (location-service scoped), capped at 5
+  // Section 1: Featured (location-service scoped), capped at 10
   const featuredSectionHtml = featuredItems.length > 0
     ? `
     <h2 class="sf-section-heading">Featured Resources</h2>
-    ${featuredItems.slice(0, 5).map(renderItem).join("\n")}`
+    ${featuredItems.slice(0, 10).map(renderItem).join("\n")}`
     : "";
 
   // Section 2: More Resources (all other items)
