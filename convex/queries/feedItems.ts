@@ -143,6 +143,12 @@ export const getFeedItemsForOfficeService = internalQuery({
       ...locationScoped,
       ...locationServiceScoped,
     ];
+
+    // Build a Set of IDs for brand-type sources — brand items always go to Featured
+    const brandSourceIds = new Set(
+      allSources.filter((s) => s.type === "brand").map((s) => s._id)
+    );
+
     const sourceIdSet = new Set(allSources.map((s) => s._id));
 
     // Collect feedItems for all applicable sources
@@ -191,8 +197,10 @@ export const getFeedItemsForOfficeService = internalQuery({
       contentExtractedAt: undefined,
     });
 
-    const serviceScopedStaticFeedItems = serviceScopedStaticItems.map(toFeedItem);
-    const globalStaticFeedItems = globalStaticItems.map(toFeedItem);
+    // Split static items by type: brand → featured, authority/freshness → general
+    const allStaticItems = [...serviceScopedStaticItems, ...globalStaticItems];
+    const brandStaticItems = allStaticItems.filter(s => s.type === "brand").map(toFeedItem);
+    const nonBrandStaticItems = allStaticItems.filter(s => s.type !== "brand").map(toFeedItem);
 
     const dynamicItems = [...itemArrays.flat(), ...authorityItems];
 
@@ -222,7 +230,9 @@ export const getFeedItemsForOfficeService = internalQuery({
     const generalDynamic: (typeof dynamicItems)[0][] = [];
 
     for (const item of scoredItems) {
-      if (item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1) {
+      const isBrand = item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">);
+      const isLocationServiceScored = item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1;
+      if (isBrand || isLocationServiceScored) {
         featuredDynamic.push(item);
       } else {
         generalDynamic.push(item);
@@ -244,8 +254,8 @@ export const getFeedItemsForOfficeService = internalQuery({
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
 
     // Service-scoped static items go into featured (up to 5 total), global static into general
-    const featuredAll = shuffle([...shuffledFeatured, ...serviceScopedStaticFeedItems]).slice(0, 5);
-    const generalAll = shuffle([...shuffledGeneral, ...globalStaticFeedItems]);
+    const featuredAll = shuffle([...shuffledFeatured, ...brandStaticItems]).slice(0, 5);
+    const generalAll = shuffle([...shuffledGeneral, ...nonBrandStaticItems]);
 
     // Apply round-robin interleave to each bucket separately
     const featured = roundRobinInterleave(featuredAll);
