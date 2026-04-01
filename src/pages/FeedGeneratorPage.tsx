@@ -3,11 +3,18 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
-type ScrapedItem = { title: string; link: string };
+type ScrapedItem = {
+  title: string;
+  link: string;
+  thumbnailUrl?: string;
+  description?: string;
+  publishedAt?: string;
+};
 
 type ScrapeResult = {
   items: ScrapedItem[];
   warnings: string[];
+  feedType?: "youtube";
 };
 
 export default function FeedGeneratorPage() {
@@ -73,6 +80,7 @@ export default function FeedGeneratorPage() {
       await createFeed({
         url: url.trim(),
         title: saveTitle.trim(),
+        feedType: result.feedType,
         items: result.items,
         scrapedItemCount: result.items.length,
         lastScrapedAt: Date.now(),

@@ -53,12 +53,19 @@ function mapYouTubeItem(item: Parser.Item & YouTubeCustomItem): {
   publishedAt?: string;
 } {
   const mediaGroup = item.mediaGroup as Record<string, unknown> | undefined;
-  const mediaThumbnail = mediaGroup?.["media:thumbnail"] as
-    | Record<string, unknown>
-    | undefined;
-  const thumbnailUrl = (mediaThumbnail?.["$"] as Record<string, string> | undefined)?.url;
 
+  // media:thumbnail is parsed as an array of objects by rss-parser
+  const mediaThumbnailArr = mediaGroup?.["media:thumbnail"] as
+    | Array<{ $?: Record<string, string> }>
+    | undefined;
+  const thumbnailUrl = mediaThumbnailArr?.[0]?.["$"]?.url;
+
+  // media:description is inside mediaGroup as an array of strings
+  const mediaDescriptionArr = mediaGroup?.["media:description"] as
+    | string[]
+    | undefined;
   const description =
+    mediaDescriptionArr?.[0] ??
     (item as unknown as { contentSnippet?: string }).contentSnippet ??
     (item as unknown as { content?: string }).content ??
     undefined;
