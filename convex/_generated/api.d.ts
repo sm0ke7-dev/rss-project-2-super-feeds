@@ -28,6 +28,7 @@ import type * as lib_r2Client from "../lib/r2Client.js";
 import type * as lib_retry from "../lib/retry.js";
 import type * as lib_webSub from "../lib/webSub.js";
 import type * as locations from "../locations.js";
+import type * as migrations from "../migrations.js";
 import type * as mutations_admin from "../mutations/admin.js";
 import type * as mutations_feedRuns from "../mutations/feedRuns.js";
 import type * as mutations_generatedFeeds from "../mutations/generatedFeeds.js";
@@ -73,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "lib/retry": typeof lib_retry;
   "lib/webSub": typeof lib_webSub;
   locations: typeof locations;
+  migrations: typeof migrations;
   "mutations/admin": typeof mutations_admin;
   "mutations/feedRuns": typeof mutations_feedRuns;
   "mutations/generatedFeeds": typeof mutations_generatedFeeds;

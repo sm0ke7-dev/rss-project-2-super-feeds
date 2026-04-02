@@ -39,6 +39,7 @@ export interface WebFeedInput {
   items: Array<{
     title: string;
     link: string;
+    videoId?: string;
     thumbnailUrl?: string;
     description?: string;
     publishedAt?: string;
@@ -51,35 +52,48 @@ export function generateWebFeedRss(feed: WebFeedInput, feedUrl: string): string 
   const itemsXml = feed.items
     .map((item) => {
       const pubDateXml = item.publishedAt
-        ? `\n      <pubDate>${escapeXml(item.publishedAt)}</pubDate>`
+        ? "\n      <pubDate>" + escapeXml(item.publishedAt) + "</pubDate>"
         : "";
       const descriptionXml = item.description
-        ? `\n      <description><![CDATA[${item.description}]]></description>`
+        ? "\n      <description><![CDATA[" + item.description + "]]></description>"
         : "";
       const mediaThumbXml = item.thumbnailUrl
-        ? `\n      <media:thumbnail url="${escapeXml(item.thumbnailUrl)}" />`
+        ? "\n      <media:thumbnail url=\"" + escapeXml(item.thumbnailUrl) + "\" />"
+        : "";
+      const ytVideoIdXml = item.videoId
+        ? "\n      <yt:videoId>" + escapeXml(item.videoId) + "</yt:videoId>"
         : "";
 
-      return `
-    <item>
-      <title><![CDATA[${item.title}]]></title>
-      <link>${escapeXml(item.link)}</link>
-      <guid isPermaLink="true">${escapeXml(item.link)}</guid>${pubDateXml}${descriptionXml}${mediaThumbXml}
-    </item>`;
+      return (
+        "\n    <item>" +
+        "\n      <title><![CDATA[" + item.title + "]]></title>" +
+        "\n      <link>" + escapeXml(item.link) + "</link>" +
+        "\n      <guid isPermaLink=\"true\">" + escapeXml(item.link) + "</guid>" +
+        pubDateXml +
+        descriptionXml +
+        mediaThumbXml +
+        ytVideoIdXml +
+        "\n    </item>"
+      );
     })
     .join("\n");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
-  <channel>
-    <title><![CDATA[${feed.title}]]></title>
-    <link>${escapeXml(feed.url)}</link>
-    <description><![CDATA[RSS feed generated from ${feed.title}]]></description>
-    <lastBuildDate>${escapeXml(lastBuildDate)}</lastBuildDate>
-    <atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />
-${itemsXml}
-  </channel>
-</rss>`;
+  return (
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    "<rss version=\"2.0\"" +
+    " xmlns:atom=\"http://www.w3.org/2005/Atom\"" +
+    " xmlns:media=\"http://search.yahoo.com/mrss/\"" +
+    " xmlns:yt=\"http://www.youtube.com/xml/schemas/2015\">\n" +
+    "  <channel>\n" +
+    "    <title><![CDATA[" + feed.title + "]]></title>\n" +
+    "    <link>" + escapeXml(feed.url) + "</link>\n" +
+    "    <description><![CDATA[RSS feed generated from " + feed.title + "]]></description>\n" +
+    "    <lastBuildDate>" + escapeXml(lastBuildDate) + "</lastBuildDate>\n" +
+    "    <atom:link href=\"" + escapeXml(feedUrl) + "\" rel=\"self\" type=\"application/rss+xml\" />\n" +
+    itemsXml + "\n" +
+    "  </channel>\n" +
+    "</rss>"
+  );
 }
 
 export function generateRss2(meta: FeedMeta, items: FeedItem[]): string {

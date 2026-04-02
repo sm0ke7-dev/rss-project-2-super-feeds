@@ -24,6 +24,7 @@ export const create = mutation({
       v.object({
         title: v.string(),
         link: v.string(),
+        videoId: v.optional(v.string()),
         thumbnailUrl: v.optional(v.string()),
         description: v.optional(v.string()),
         publishedAt: v.optional(v.string()),
@@ -96,6 +97,7 @@ export const updateItems = internalMutation({
       v.object({
         title: v.string(),
         link: v.string(),
+        videoId: v.optional(v.string()),
         thumbnailUrl: v.optional(v.string()),
         description: v.optional(v.string()),
         publishedAt: v.optional(v.string()),

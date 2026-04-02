@@ -136,15 +136,6 @@ export const getFeedItemsForOfficeService = internalQuery({
     // Build a Set of IDs for location-service scoped sources (featured bucket)
     const locationServiceSourceIds = new Set(locationServiceScoped.map((s) => s._id));
 
-    // Build a Set of IDs for all location-relevant sources — videos from these
-    // are promoted to Featured so the round-robin interleave can mix types
-    const locationRelevantSourceIds = new Set([
-      ...locationServiceScoped,
-      ...locationScoped,
-      ...officeServiceScoped,
-      ...officeScoped,
-    ].map((s) => s._id));
-
     const allSources = [
       ...globals,
       ...serviceScoped,
@@ -262,8 +253,8 @@ export const getFeedItemsForOfficeService = internalQuery({
       return a;
     };
 
-    // Randomly pick up to 5 featured and 20 general dynamic items
-    const shuffledFeatured = shuffle(featuredDynamic).slice(0, 5);
+    // Randomly pick up to 10 featured and 20 general dynamic items
+    const shuffledFeatured = shuffle(featuredDynamic).slice(0, 10);
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
 
     // Service-scoped static items go into featured (up to 5 total), global static into general

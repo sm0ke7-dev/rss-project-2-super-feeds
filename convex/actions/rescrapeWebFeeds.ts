@@ -48,6 +48,7 @@ const youtubeParser = new Parser<Record<string, unknown>, YouTubeCustomItem>({
 function mapYouTubeItem(item: Parser.Item & YouTubeCustomItem): {
   title: string;
   link: string;
+  videoId?: string;
   thumbnailUrl?: string;
   description?: string;
   publishedAt?: string;
@@ -73,6 +74,7 @@ function mapYouTubeItem(item: Parser.Item & YouTubeCustomItem): {
   return {
     title: item.title ?? "(untitled)",
     link: item.link ?? "",
+    videoId: item.videoId ?? undefined,
     thumbnailUrl,
     description,
     publishedAt: item.isoDate ?? item.pubDate ?? undefined,
