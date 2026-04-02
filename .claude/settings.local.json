@@ -83,7 +83,8 @@
       "Bash(cd:*)",
       "Bash(CONVEX_DEPLOYMENT=dev:judicious-robin-411 npx convex dev --once)",
       "WebFetch(domain:judicious-robin-411.convex.site)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:docs.z.ai)"
     ]
   }
 }
