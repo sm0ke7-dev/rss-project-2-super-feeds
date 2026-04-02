@@ -43,6 +43,20 @@ function renderItem(item: FeedPageItem): string {
     </div>`
     : "";
 
+  // For audio, include a SoundCloud widget iframe (fixed 166px mini-player height)
+  const audioEmbedHtml = item.schemaType === "AudioObject"
+    ? `
+    <div class="sf-item-audio">
+      <iframe
+        src="https://w.soundcloud.com/player/?url=${encodeURIComponent(item.link)}&color=%23ff5500&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false"
+        title="${escapeXml(item.title)}"
+        width="100%"
+        height="166"
+        allow="autoplay"
+      ></iframe>
+    </div>`
+    : "";
+
   const badgeLabel = item.schemaType === "VideoObject" ? "Video" :
                      item.schemaType === "DigitalDocument" ? "Document" :
                      item.schemaType === "AudioObject" ? "Audio" : "Article";
@@ -80,6 +94,7 @@ function renderItem(item: FeedPageItem): string {
   <article class="sf-item">
     ${thumbHtml}
     ${videoEmbedHtml}
+    ${audioEmbedHtml}
     <span class="sf-item-badge">${escapeXml(badgeLabel)}</span>${item.sourceName ? `<span class="sf-item-source">${escapeXml(item.sourceName)}</span>` : ""}
     <h2 class="sf-item-title"><a href="${escapeXml(item.link)}">${escapeXml(item.title)}</a></h2>
     ${metaHtml}
@@ -276,6 +291,19 @@ export function generateFeedHtml(
       left: 0;
       width: 100%;
       height: 100%;
+      border: 0;
+    }
+
+    .sf-item-audio {
+      margin-bottom: 12px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .sf-item-audio iframe {
+      display: block;
+      width: 100%;
+      height: 166px;
       border: 0;
     }
 
