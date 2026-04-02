@@ -253,16 +253,52 @@ export const getFeedItemsForOfficeService = internalQuery({
       return a;
     };
 
-    // Randomly pick up to 10 featured and 20 general dynamic items
-    const shuffledFeatured = shuffle(featuredDynamic).slice(0, 10);
+    // --- Featured: strict slot-fill cycling ---
+    // Merge dynamic featured pool with brand statics into one pool, then
+    // bucket by type → cap each bucket → interleave in type order.
+    // This prevents any single type from dominating 10 slots regardless of pool size.
+    const allFeaturedPool = [...featuredDynamic, ...brandStaticItems] as (typeof featuredDynamic)[0][];
+
+    const featuredTypeOrder = ["Article", "VideoObject", "DigitalDocument", "AudioObject"] as const;
+    const featuredBuckets: Record<string, (typeof featuredDynamic)[0][]> = {
+      Article: [],
+      VideoObject: [],
+      DigitalDocument: [],
+      AudioObject: [],
+    };
+    for (const item of allFeaturedPool) {
+      const key = item.schemaType in featuredBuckets ? item.schemaType : "Article";
+      featuredBuckets[key].push(item);
+    }
+
+    const typesPresent = featuredTypeOrder.filter((t) => featuredBuckets[t].length > 0).length;
+    const perTypeCap = typesPresent > 0 ? Math.ceil(10 / typesPresent) : 10;
+
+    // Shuffle each bucket and cap it
+    const cappedBuckets: Record<string, (typeof featuredDynamic)[0][]> = {};
+    for (const type of featuredTypeOrder) {
+      cappedBuckets[type] = shuffle(featuredBuckets[type]).slice(0, perTypeCap);
+    }
+
+    // Cycle through type order, skip empty buckets, stop at 10 slots
+    const featured: (typeof featuredDynamic)[0][] = [];
+    let cycleIdx = 0;
+    while (featured.length < 10) {
+      let advanced = false;
+      for (const type of featuredTypeOrder) {
+        if (cappedBuckets[type].length > cycleIdx) {
+          featured.push(cappedBuckets[type][cycleIdx]);
+          if (featured.length >= 10) break;
+          advanced = true;
+        }
+      }
+      if (!advanced) break; // all buckets exhausted
+      cycleIdx++;
+    }
+
+    // --- General: unchanged ---
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
-
-    // Service-scoped static items go into featured (up to 5 total), global static into general
-    const featuredAll = shuffle([...shuffledFeatured, ...brandStaticItems]).slice(0, 10);
     const generalAll = shuffle([...shuffledGeneral, ...nonBrandStaticItems]);
-
-    // Apply round-robin interleave to each bucket separately
-    const featured = roundRobinInterleave(featuredAll);
     const general = roundRobinInterleave(generalAll);
 
     return { featured, general };
