@@ -37,16 +37,16 @@ export const storeFeedItems = internalMutation({
       if (!existing) {
         await ctx.db.insert("feedItems", { sourceId, ...item });
       } else {
-        // Update sourceId and schemaType if they changed (e.g. brand source
-        // taking ownership, or schemaType detection fix applied after initial ingest)
-        const needsUpdate =
-          (sourceId && existing.sourceId !== sourceId) ||
-          existing.schemaType !== item.schemaType;
-        if (needsUpdate) {
-          await ctx.db.patch(existing._id, {
-            ...(sourceId ? { sourceId } : {}),
-            schemaType: item.schemaType,
-          });
+        // Update sourceId, schemaType, and media fields if they changed
+        const patch: Record<string, unknown> = {};
+        if (sourceId && existing.sourceId !== sourceId) patch.sourceId = sourceId;
+        if (existing.schemaType !== item.schemaType) patch.schemaType = item.schemaType;
+        if (item.videoId && !existing.videoId) patch.videoId = item.videoId;
+        if (item.thumbnailUrl && !existing.thumbnailUrl) patch.thumbnailUrl = item.thumbnailUrl;
+        if (item.artworkUrl && !existing.artworkUrl) patch.artworkUrl = item.artworkUrl;
+        if (item.duration && !existing.duration) patch.duration = item.duration;
+        if (Object.keys(patch).length > 0) {
+          await ctx.db.patch(existing._id, patch);
         }
       }
     }

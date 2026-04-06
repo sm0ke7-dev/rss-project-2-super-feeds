@@ -37,6 +37,20 @@ const soundcloudParser = new Parser<Record<string, unknown>, CustomItemFields>({
 
 const genericParser = new Parser({ timeout: 10000 });
 
+// Parser for generated feed URLs — extracts media:thumbnail, yt:videoId, and
+// itunes fields so items round-trip correctly through the feed generator.
+const generatedFeedParser = new Parser<Record<string, unknown>, CustomItemFields & { mediaThumbnail?: Record<string, unknown> }>({
+  timeout: 10000,
+  customFields: {
+    item: [
+      ["yt:videoId", "videoId"],
+      ["media:thumbnail", "mediaThumbnail"],
+      ["itunes:image", "itunesImage"],
+      ["itunes:duration", "itunesDuration"],
+    ],
+  },
+});
+
 export const fetchRssSource = internalAction({
   args: {
     sourceId: v.id("sources"),
@@ -119,6 +133,47 @@ export const fetchRssSource = internalAction({
             channelId: item.channelId ?? undefined,
             thumbnailUrl,
             schemaType: "VideoObject" as const,
+          };
+        });
+      } else if (url.includes(".convex.site/generated/")) {
+        // Generated feed — use enriched parser to preserve media fields
+        const feed = await withRetry(() => generatedFeedParser.parseURL(url), 3, 500);
+        items = feed.items.map((item) => {
+          const guid = item.guid ?? item.link ?? item.title ?? "";
+          const linkStr = item.link ?? "";
+          const isSC = linkStr.includes("soundcloud.com");
+          const isYT = !!item.videoId;
+
+          const mediaThumbnail = item.mediaThumbnail as
+            | Record<string, unknown>
+            | undefined;
+          const thumbnailUrl =
+            (mediaThumbnail?.["$"] as Record<string, string> | undefined)?.url ??
+            undefined;
+
+          const artworkUrl = isSC
+            ? (item.itunesImage?.["$"]?.href ?? thumbnailUrl ?? undefined)
+            : undefined;
+
+          return {
+            guid,
+            title: item.title ?? "(untitled)",
+            link: linkStr,
+            description:
+              (item as unknown as { contentSnippet?: string }).contentSnippet ??
+              (item as unknown as { content?: string }).content ??
+              undefined,
+            pubDate: item.pubDate ?? undefined,
+            isoDate: item.isoDate ?? undefined,
+            videoId: isYT ? item.videoId : undefined,
+            thumbnailUrl: isYT ? thumbnailUrl : undefined,
+            artworkUrl,
+            duration: isSC ? (item.itunesDuration ?? undefined) : undefined,
+            schemaType: isYT
+              ? ("VideoObject" as const)
+              : isSC
+                ? ("AudioObject" as const)
+                : ("Article" as const),
           };
         });
       } else {
