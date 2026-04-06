@@ -64,6 +64,37 @@ function roundRobinInterleave<T extends { schemaType: string }>(items: T[]): T[]
   return interleaved;
 }
 
+// Animal-keyword exclusion lists per service
+const EXCLUDE_ANIMALS: Record<string, string[]> = {
+  "raccoon-removal": ["squirrel", "bat", "bats", "snake", "rodent", "rat", "mouse", "mice", "opossum", "skunk", "bird", "pigeon"],
+  "squirrel-removal": ["raccoon", "bat", "bats", "snake", "rodent", "rat", "mouse", "mice", "opossum", "skunk", "bird", "pigeon"],
+  "bat-removal": ["raccoon", "squirrel", "snake", "rodent", "rat", "mouse", "mice", "opossum", "skunk", "bird", "pigeon"],
+};
+
+function isRelevantToService(
+  item: { title: string; description?: string; link: string },
+  serviceSlug: string
+): boolean {
+  if (serviceSlug === "wildlife-removal") return true;
+  const excludeList = EXCLUDE_ANIMALS[serviceSlug];
+  if (!excludeList) return true;
+  const textToCheck = `${item.title} ${item.description ?? ""}`.toLowerCase();
+  for (const animal of excludeList) {
+    const regex = new RegExp(`\\b${animal}s?\\b`, "i");
+    if (regex.test(textToCheck)) return false;
+  }
+  return true;
+}
+
+function isGovEdu(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    return hostname.endsWith(".gov") || hostname.endsWith(".edu");
+  } catch {
+    return false;
+  }
+}
+
 export const getFeedItemsForOfficeService = internalQuery({
   args: {
     officeId: v.id("offices"),
@@ -137,18 +168,27 @@ export const getFeedItemsForOfficeService = internalQuery({
     const locationServiceSourceIds = new Set(locationServiceScoped.map((s) => s._id));
 
     const allSources = [
-      ...globals,
-      ...serviceScoped,
-      ...officeScoped,
-      ...officeServiceScoped,
-      ...locationScoped,
       ...locationServiceScoped,
+      ...locationScoped,
+      ...officeServiceScoped,
+      ...officeScoped,
+      ...serviceScoped,
+      ...globals,
     ];
 
     // Build a Set of IDs for brand-type sources — brand items always go to Featured
     const brandSourceIds = new Set(
       allSources.filter((s) => s.type === "brand").map((s) => s._id)
     );
+
+    // Build a Set of IDs for authority-type sources
+    const authoritySourceIds = new Set(
+      allSources.filter((s) => s.type === "authority").map((s) => s._id)
+    );
+
+    // Look up service to get slug for animal relevance filtering
+    const service = await ctx.db.get(serviceId);
+    const serviceSlug = service?.slug ?? "wildlife-removal";
 
     const sourceIdSet = new Set(allSources.map((s) => s._id));
 
@@ -198,10 +238,17 @@ export const getFeedItemsForOfficeService = internalQuery({
       contentExtractedAt: undefined,
     });
 
-    // Split static items by type: brand → featured, authority/freshness → general
+    // Split static items: brand → branded pool, authority .gov/.edu → featured, rest → general
     const allStaticItems = [...serviceScopedStaticItems, ...globalStaticItems];
     const brandStaticItems = allStaticItems.filter(s => s.type === "brand").map(toFeedItem);
-    const nonBrandStaticItems = allStaticItems.filter(s => s.type !== "brand").map(toFeedItem);
+
+    const authorityStaticFeatured = allStaticItems
+      .filter(s => s.type === "authority" && isGovEdu(s.url) && isRelevantToService({ title: s.title, description: s.description, link: s.url }, serviceSlug))
+      .map(toFeedItem);
+
+    const nonFeaturedStaticItems = allStaticItems
+      .filter(s => s.type !== "brand" && !(s.type === "authority" && isGovEdu(s.url) && isRelevantToService({ title: s.title, description: s.description, link: s.url }, serviceSlug)))
+      .map(toFeedItem);
 
     const dynamicItems = [...itemArrays.flat(), ...authorityItems];
 
@@ -220,24 +267,42 @@ export const getFeedItemsForOfficeService = internalQuery({
       }
     }
 
-    // Exclude score-3 (unrelated) items from feeds.
+    // Separate brand items FIRST — they bypass score filtering entirely
+    const allDeduped = [...guidMap.values()];
+    const brandDedupedItems: (typeof dynamicItems)[0][] = [];
+    const nonBrandItems: (typeof dynamicItems)[0][] = [];
+
+    for (const item of allDeduped) {
+      const isBrand = item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">);
+      if (isBrand) {
+        brandDedupedItems.push(item);
+      } else {
+        nonBrandItems.push(item);
+      }
+    }
+
+    // Exclude score-3 (unrelated) items from non-brand items only.
     // Unscored items pass through (fail-open per D001).
-    const scoredItems = [...guidMap.values()].filter(
+    const scoredItems = nonBrandItems.filter(
       (item) => item.relevanceScore !== 3
     );
 
-    // Split deduplicated dynamic items into featured (location-service scoped) and general
-    const featuredDynamic: (typeof dynamicItems)[0][] = [];
+    // Brand items always go to featured; split the rest into featured vs general
+    const featuredDynamic: (typeof dynamicItems)[0][] = [...brandDedupedItems];
     const generalDynamic: (typeof dynamicItems)[0][] = [];
 
     for (const item of scoredItems) {
-      const isBrand = item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">);
-      const isLocationServiceScored = item.sourceId && locationServiceSourceIds.has(item.sourceId as Id<"sources">) && item.relevanceScore === 1;
-      // Promote all VideoObject items into Featured (unless irrelevant, i.e. score 3)
-      const isLocationVideo = item.schemaType === "VideoObject"
-        && item.relevanceScore !== 3;
-      if (isBrand || isLocationServiceScored || isLocationVideo) {
-        featuredDynamic.push(item);
+      // Check if this item is from an authority source OR has a .gov/.edu link
+      const isAuthority = item.sourceId && authoritySourceIds.has(item.sourceId as Id<"sources">);
+      const isGovEduLink = isGovEdu(item.link);
+
+      if (isAuthority || isGovEduLink) {
+        // Authority/.gov/.edu content → Featured, but only if relevant to this service's animal
+        if (isRelevantToService(item, serviceSlug)) {
+          featuredDynamic.push(item);
+        } else {
+          generalDynamic.push(item);  // irrelevant authority → demote to general
+        }
       } else {
         generalDynamic.push(item);
       }
@@ -257,7 +322,32 @@ export const getFeedItemsForOfficeService = internalQuery({
     // Merge dynamic featured pool with brand statics into one pool, then
     // bucket by type → cap each bucket → interleave in type order.
     // This prevents any single type from dominating 10 slots regardless of pool size.
-    const allFeaturedPool = [...featuredDynamic, ...brandStaticItems] as (typeof featuredDynamic)[0][];
+    const allFeaturedPool = [...featuredDynamic, ...brandStaticItems, ...authorityStaticFeatured] as (typeof featuredDynamic)[0][];
+
+    // --- Branded: pick exactly 1 brand item per schema type ---
+    const brandedTypeOrder = ["VideoObject", "AudioObject", "DigitalDocument", "Article"] as const;
+    const brandPool = allFeaturedPool.filter(
+      (item) =>
+        (item.sourceId && brandSourceIds.has(item.sourceId as Id<"sources">)) ||
+        brandStaticItems.some((bs) => bs.guid === item.guid)
+    );
+
+    const branded: (typeof featuredDynamic)[0][] = [];
+    const brandedGuids = new Set<string>();
+    for (const type of brandedTypeOrder) {
+      const candidates = brandPool
+        .filter((item) => item.schemaType === type && !brandedGuids.has(item.guid))
+        .sort((a, b) => (b.isoDate ?? "").localeCompare(a.isoDate ?? ""));
+      if (candidates.length > 0) {
+        branded.push(candidates[0]);
+        brandedGuids.add(candidates[0].guid);
+      }
+    }
+
+    // Remove branded items from featured pool
+    const featuredPoolMinusBranded = allFeaturedPool.filter(
+      (item) => !brandedGuids.has(item.guid)
+    );
 
     const featuredTypeOrder = ["Article", "VideoObject", "DigitalDocument", "AudioObject"] as const;
     const featuredBuckets: Record<string, (typeof featuredDynamic)[0][]> = {
@@ -266,7 +356,7 @@ export const getFeedItemsForOfficeService = internalQuery({
       DigitalDocument: [],
       AudioObject: [],
     };
-    for (const item of allFeaturedPool) {
+    for (const item of featuredPoolMinusBranded) {
       const key = item.schemaType in featuredBuckets ? item.schemaType : "Article";
       featuredBuckets[key].push(item);
     }
@@ -298,9 +388,9 @@ export const getFeedItemsForOfficeService = internalQuery({
 
     // --- General: unchanged ---
     const shuffledGeneral = shuffle(generalDynamic).slice(0, 20);
-    const generalAll = shuffle([...shuffledGeneral, ...nonBrandStaticItems]);
+    const generalAll = shuffle([...shuffledGeneral, ...nonFeaturedStaticItems]);
     const general = roundRobinInterleave(generalAll);
 
-    return { featured, general };
+    return { branded, featured, general };
   },
 });
