@@ -54,19 +54,9 @@ export const aggregateFeed = internalAction({
         );
       }
 
-      // Extract full content for new Article items (non-blocking — don't let extraction failures kill the feed run)
-      try {
-        await ctx.runAction(internal.actions.extractContent.extractContentBatch, {});
-      } catch (extractErr) {
-        console.error("Content extraction failed (non-fatal):", extractErr);
-      }
-
-      // Score new items for relevance (non-blocking — don't let scoring failures kill the feed run)
-      try {
-        await ctx.runAction(internal.actions.scoreRelevance.scoreRelevanceBatch, {});
-      } catch (scoreErr) {
-        console.error("Relevance scoring failed (non-fatal):", scoreErr);
-      }
+      // Schedule extraction and scoring as background tasks — don't block feed generation.
+      // Feed output uses whatever fullContent/scores are already in the DB.
+      // Extraction and scoring will catch up on the next cycle.
 
       // Generate feed files (proceeds even if some sources failed)
       await ctx.runAction(internal.actions.generateFeed.generateFeedFiles, {
@@ -128,8 +118,24 @@ export const runAggregationCycle = internalAction({
     const successes = results.filter((r) => r.status === "fulfilled").length;
     const failures = results.filter((r) => r.status === "rejected").length;
     console.log(
-      `Aggregation cycle complete: ${successes} feeds succeeded, ${failures} failed`
+      `Feed generation complete: ${successes} feeds succeeded, ${failures} failed`
     );
+
+    // Run extraction and scoring once after all feeds are generated.
+    // This avoids redundant per-feed calls competing for the same global item pool.
+    try {
+      await ctx.runAction(internal.actions.extractContent.extractContentBatch, {});
+    } catch (extractErr) {
+      console.error("Content extraction failed (non-fatal):", extractErr);
+    }
+
+    try {
+      await ctx.runAction(internal.actions.scoreRelevance.scoreRelevanceBatch, {});
+    } catch (scoreErr) {
+      console.error("Relevance scoring failed (non-fatal):", scoreErr);
+    }
+
+    console.log("Aggregation cycle complete (extraction + scoring done)");
   },
 });
 

@@ -42,12 +42,14 @@ export const generateFeedFiles = internalAction({
     // Build sourceId -> title map for labelling items in the HTML output
     const sourceIds = [...new Set(rawItems.map(i => i.sourceId).filter(Boolean))];
     const sourceMap = new Map<string, string>();
-    for (const sid of sourceIds) {
-      if (sid) {
-        const src = await ctx.runQuery(internal.queries.sources.getSourceById, { sourceId: sid });
-        if (src) sourceMap.set(sid, src.title);
-      }
-    }
+    await Promise.all(
+      sourceIds.map(async (sid) => {
+        if (sid) {
+          const src = await ctx.runQuery(internal.queries.sources.getSourceById, { sourceId: sid });
+          if (src) sourceMap.set(sid, src.title);
+        }
+      })
+    );
 
     const feedItems: FeedItem[] = rawItems.map((item) => ({
       guid: item.guid,
