@@ -36,6 +36,18 @@ export const storeFeedItems = internalMutation({
         .first();
       if (!existing) {
         await ctx.db.insert("feedItems", { sourceId, ...item });
+      } else {
+        // Update sourceId and schemaType if they changed (e.g. brand source
+        // taking ownership, or schemaType detection fix applied after initial ingest)
+        const needsUpdate =
+          (sourceId && existing.sourceId !== sourceId) ||
+          existing.schemaType !== item.schemaType;
+        if (needsUpdate) {
+          await ctx.db.patch(existing._id, {
+            ...(sourceId ? { sourceId } : {}),
+            schemaType: item.schemaType,
+          });
+        }
       }
     }
     // Update lastFetchedAt and clear any previous error

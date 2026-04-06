@@ -32,12 +32,12 @@ export const generateFeedFiles = internalAction({
       );
     }
 
-    const { featured: featuredRaw, general: generalRaw } = await ctx.runQuery(
+    const { branded: brandedRaw, featured: featuredRaw, general: generalRaw } = await ctx.runQuery(
       internal.queries.feedItems.getFeedItemsForOfficeService,
       { officeId, locationId, serviceId }
     );
 
-    const rawItems = [...featuredRaw, ...generalRaw];
+    const rawItems = [...brandedRaw, ...featuredRaw, ...generalRaw];
 
     // Build sourceId -> title map for labelling items in the HTML output
     const sourceIds = [...new Set(rawItems.map(i => i.sourceId).filter(Boolean))];
@@ -79,6 +79,7 @@ export const generateFeedFiles = internalAction({
       sourceName: item.sourceId ? sourceMap.get(item.sourceId) : undefined,
     });
 
+    const brandedPageItems: FeedPageItem[] = brandedRaw.map(toPageItem);
     const featuredPageItems: FeedPageItem[] = featuredRaw.map(toPageItem);
     const generalPageItems: FeedPageItem[] = generalRaw.map(toPageItem);
 
@@ -102,6 +103,7 @@ export const generateFeedFiles = internalAction({
       location.slug,
       service.slug,
       FEED_BASE_URL,
+      brandedPageItems,
       featuredPageItems,
       generalPageItems,
       {
@@ -124,11 +126,11 @@ export const generateFeedFiles = internalAction({
       serviceSlug: service.slug,
       xmlContent,
       htmlContent,
-      itemCount: featuredRaw.length + generalRaw.length,
+      itemCount: brandedRaw.length + featuredRaw.length + generalRaw.length,
     });
 
     console.log(
-      `Generated feed for ${office.slug}/${location.slug}/${service.slug} (${featuredRaw.length + generalRaw.length} items)`
+      `Generated feed for ${office.slug}/${location.slug}/${service.slug} (${brandedRaw.length + featuredRaw.length + generalRaw.length} items)`
     );
 
     // Ping WebSub hub (best-effort)
@@ -137,6 +139,6 @@ export const generateFeedFiles = internalAction({
       await pingWebSubHub(WEBSUB_HUB, topicUrl);
     }
 
-    return { itemCount: featuredRaw.length + generalRaw.length };
+    return { itemCount: brandedRaw.length + featuredRaw.length + generalRaw.length };
   },
 });

@@ -29,6 +29,39 @@ export const diagnoseMediaSources = internalQuery({
   },
 });
 
+// One-time fix: transfer SoundCloud playlist item to brand source
+export const fixSoundCloudPlaylistOwnership = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const brandSourceId = "jn76b7ex302qc6ftbfsasnr7jd84aszp" as any;
+    const itemId = "jx72yd6xvjk05c35v0ked3nvs984ajkr" as any;
+    await ctx.db.patch(itemId, { sourceId: brandSourceId });
+    const patched = await ctx.db.get(itemId);
+    return { patched: { id: patched?._id, sourceId: patched?.sourceId, schemaType: patched?.schemaType, title: patched?.title } };
+  },
+});
+
+// Diagnostic: find feedItems for specific source IDs
+export const diagnoseFeedItemsBySource = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    // Check both SoundCloud sources
+    const globalSourceId = "jn73cdan424p7egnrzggqzhwhx84b3sg";
+    const brandSourceId = "jn76b7ex302qc6ftbfsasnr7jd84aszp";
+
+    const allItems = await ctx.db.query("feedItems").collect();
+    const globalItems = allItems.filter(i => i.sourceId === globalSourceId);
+    const brandItems = allItems.filter(i => i.sourceId === brandSourceId);
+    const soundcloudItems = allItems.filter(i => i.link?.includes("soundcloud.com/aaactxgulfcoast/sets/"));
+
+    return {
+      globalSourceItems: globalItems.map(i => ({ id: i._id, title: i.title, schemaType: i.schemaType, sourceId: i.sourceId, relevanceScore: i.relevanceScore })),
+      brandSourceItems: brandItems.map(i => ({ id: i._id, title: i.title, schemaType: i.schemaType, sourceId: i.sourceId, relevanceScore: i.relevanceScore })),
+      soundcloudPlaylistItems: soundcloudItems.map(i => ({ id: i._id, title: i.title, schemaType: i.schemaType, sourceId: i.sourceId, guid: i.guid, relevanceScore: i.relevanceScore })),
+    };
+  },
+});
+
 // One-time migration: fix feedItems whose link points to YouTube but were stored as "Article",
 // and SoundCloud items stored as "Article" instead of "AudioObject".
 export const fixMediaSchemaTypes = internalMutation({

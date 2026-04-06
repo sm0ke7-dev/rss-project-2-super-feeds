@@ -132,7 +132,7 @@ export const fetchRssSource = internalAction({
             description: item.contentSnippet ?? item.content ?? undefined,
             pubDate: item.pubDate ?? undefined,
             isoDate: item.isoDate ?? undefined,
-            schemaType: "Article" as const,
+            schemaType: item.link?.includes("soundcloud.com") ? ("AudioObject" as const) : ("Article" as const),
           };
         });
       }

@@ -191,6 +191,39 @@ export const rescrapeWebFeeds = internalAction({
             return;
           }
 
+          // --- SoundCloud feeds: oEmbed rescrape ---
+          else if (feed.feedType === "soundcloud") {
+            const oembedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(feed.url)}`;
+            const res = await fetch(oembedUrl, {
+              headers: { Accept: "application/json" },
+            });
+            if (!res.ok) {
+              throw new Error(`SoundCloud oEmbed HTTP ${res.status}`);
+            }
+            const data = await res.json() as {
+              title?: string;
+              description?: string;
+              thumbnail_url?: string;
+            };
+
+            const items = [{
+              title: data.title ?? "SoundCloud Playlist",
+              link: feed.url,
+              thumbnailUrl: data.thumbnail_url,
+              description: data.description,
+            }];
+
+            await ctx.runMutation(internal.webFeeds.updateItems, {
+              id: feed._id,
+              items,
+              scrapedItemCount: items.length,
+              lastScrapedAt: Date.now(),
+            });
+
+            console.log(`rescrapeWebFeeds (soundcloud): ${feed.url} → ${items.length} item(s)`);
+            return;
+          }
+
           // --- Non-YouTube feeds: HTML scrape via Cheerio ---
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15_000);

@@ -79,12 +79,12 @@ export const getSourcesForFeed = internalQuery({
     ]);
 
     const all = [
-      ...globals,
-      ...serviceScoped,
-      ...officeScoped,
-      ...officeServiceScoped,
-      ...locationScoped,
       ...locationServiceScoped,
+      ...locationScoped,
+      ...officeServiceScoped,
+      ...officeScoped,
+      ...serviceScoped,
+      ...globals,
     ];
 
     // Deduplicate by URL

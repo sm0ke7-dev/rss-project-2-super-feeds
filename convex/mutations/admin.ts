@@ -72,3 +72,18 @@ export const cancelFeedRun = mutation({
     });
   },
 });
+
+export const triggerRegenerateOnly = mutation({
+  args: {
+    officeId: v.id("offices"),
+    locationId: v.id("locations"),
+    serviceId: v.id("services"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.scheduler.runAfter(0, internal.actions.generateFeed.generateFeedFiles, {
+      officeId: args.officeId,
+      locationId: args.locationId,
+      serviceId: args.serviceId,
+    });
+  },
+});

@@ -18,6 +18,7 @@ export default function ManualTriggerPage() {
   const triggerFullRefresh = useMutation(api.mutations.admin.triggerFullRefresh);
   const triggerBackfill = useMutation(api.mutations.admin.triggerBackfillScoring);
   const cancelRun = useMutation(api.mutations.admin.cancelFeedRun);
+  const triggerRegenerateOnly = useMutation(api.mutations.admin.triggerRegenerateOnly);
 
   const runningRun = useQuery(
     api.feedRuns.getRunningForCombo,
@@ -39,6 +40,21 @@ export default function ManualTriggerPage() {
         serviceId: selectedServiceId as Parameters<typeof triggerFeed>[0]["serviceId"],
       });
       setStatus("Scheduled! Check Feed Runs tab for progress.");
+    } catch (e) {
+      setStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async function handleRegenerateOnly() {
+    if (!selectedOfficeId || !selectedLocationId || !selectedServiceId) return;
+    setStatus("Regenerating feed (skipping fetch/extract/score)…");
+    try {
+      await triggerRegenerateOnly({
+        officeId: selectedOfficeId as Parameters<typeof triggerRegenerateOnly>[0]["officeId"],
+        locationId: selectedLocationId as Parameters<typeof triggerRegenerateOnly>[0]["locationId"],
+        serviceId: selectedServiceId as Parameters<typeof triggerRegenerateOnly>[0]["serviceId"],
+      });
+      setStatus("Regeneration scheduled! Should complete in seconds.");
     } catch (e) {
       setStatus(`Error: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -130,13 +146,23 @@ export default function ManualTriggerPage() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={handleTriggerOne}
-              disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
-            >
-              Trigger Feed
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={handleTriggerOne}
+                disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
+              >
+                Trigger Feed
+              </button>
+              <button
+                onClick={handleRegenerateOnly}
+                disabled={!selectedOfficeId || !selectedLocationId || !selectedServiceId}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white text-sm font-medium py-2 rounded transition-colors"
+              >
+                Regenerate Only (Fast)
+              </button>
+              <p className="text-xs text-gray-400">Regenerate rebuilds HTML/RSS from existing data — skips fetch, extract, and scoring.</p>
+            </div>
           )}
         </div>
       </div>

@@ -83,7 +83,8 @@ export function generateWebFeedRss(feed: WebFeedInput, feedUrl: string): string 
     "<rss version=\"2.0\"" +
     " xmlns:atom=\"http://www.w3.org/2005/Atom\"" +
     " xmlns:media=\"http://search.yahoo.com/mrss/\"" +
-    " xmlns:yt=\"http://www.youtube.com/xml/schemas/2015\">\n" +
+    " xmlns:yt=\"http://www.youtube.com/xml/schemas/2015\"" +
+    " xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\">\n" +
     "  <channel>\n" +
     "    <title><![CDATA[" + feed.title + "]]></title>\n" +
     "    <link>" + escapeXml(feed.url) + "</link>\n" +

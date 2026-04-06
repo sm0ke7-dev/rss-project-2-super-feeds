@@ -19,7 +19,7 @@ export const create = mutation({
   args: {
     url: v.string(),
     title: v.string(),
-    feedType: v.optional(v.literal("youtube")),
+    feedType: v.optional(v.union(v.literal("youtube"), v.literal("soundcloud"))),
     items: v.array(
       v.object({
         title: v.string(),

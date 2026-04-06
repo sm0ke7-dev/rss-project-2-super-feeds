@@ -110,6 +110,7 @@ export function generateFeedHtml(
   locationSlug: string,
   serviceSlug: string,
   feedBaseUrl: string,
+  brandedItems: FeedPageItem[],
   featuredItems: FeedPageItem[],
   generalItems: FeedPageItem[],
   nap?: NapInfo,
@@ -120,7 +121,7 @@ export function generateFeedHtml(
   const pageTitle = `AAAC ${locationName} — ${serviceName} Super Feed`;
   const metaDescription = `Aggregated wildlife removal resources for ${locationName}, ${serviceName}.`;
 
-  const allItems = [...featuredItems, ...generalItems];
+  const allItems = [...brandedItems, ...featuredItems, ...generalItems];
 
   const jsonLdBlocks = allItems.map(item => {
     const ld = dispatchJsonLd(item);
@@ -180,6 +181,13 @@ export function generateFeedHtml(
     <nav class="sf-policy-links">
       ${policyLinks.join("\n      ")}
     </nav>`
+    : "";
+
+  // Section 0: Branded (company-owned content — 1 per schema type, max 4)
+  const brandedSectionHtml = brandedItems.length > 0
+    ? `
+    <h2 class="sf-section-heading">From AAAC Wildlife Removal</h2>
+    ${brandedItems.map(renderItem).join("\n")}`
     : "";
 
   // Section 1: Featured (location-service scoped), capped at 10
@@ -434,6 +442,7 @@ export function generateFeedHtml(
     </header>
     ${napHtml}
     ${policyLinksHtml}
+    ${brandedSectionHtml}
     ${featuredSectionHtml}
     ${generalSectionHtml}
   </section>

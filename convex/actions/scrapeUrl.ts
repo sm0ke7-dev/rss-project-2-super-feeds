@@ -125,6 +125,41 @@ export const scrapeUrl = action({
       }
     }
 
+    // --- SoundCloud playlist detection ---
+    const isSoundCloudPlaylist =
+      parsed.hostname === "soundcloud.com" &&
+      parsed.pathname.includes("/sets/");
+
+    if (isSoundCloudPlaylist) {
+      try {
+        const oembedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(trimmed)}`;
+        const res = await fetch(oembedUrl, { headers: { Accept: "application/json" } });
+        if (!res.ok) {
+          return { items: [], warnings: [`SoundCloud oEmbed failed: HTTP ${res.status}`] };
+        }
+        const data = await res.json() as {
+          title?: string;
+          description?: string;
+          thumbnail_url?: string;
+          author_name?: string;
+        };
+
+        // Store the playlist as a single AudioObject item
+        const title = data.title ?? "SoundCloud Playlist";
+        const items = [{
+          title,
+          link: trimmed,
+          thumbnailUrl: data.thumbnail_url,
+          description: data.description,
+        }];
+
+        return { items, warnings: [], feedType: "soundcloud" as const };
+      } catch (err: unknown) {
+        const msg = `Failed to fetch SoundCloud playlist: ${err instanceof Error ? err.message : String(err)}`;
+        return { items: [], warnings: [msg] };
+      }
+    }
+
     // --- Fetch page HTML (non-YouTube path) ---
     let html: string;
     try {

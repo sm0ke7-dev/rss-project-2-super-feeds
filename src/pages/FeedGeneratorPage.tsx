@@ -19,7 +19,7 @@ type ScrapedItem = {
 type ScrapeResult = {
   items: ScrapedItem[];
   warnings: string[];
-  feedType?: "youtube";
+  feedType?: "youtube" | "soundcloud";
 };
 
 export default function FeedGeneratorPage() {
@@ -127,7 +127,7 @@ export default function FeedGeneratorPage() {
           onKeyDown={(e) => {
             if (e.key === "Enter" && url.trim() && !loading) handleGenerate();
           }}
-          placeholder="Paste a URL to scrape for article links…"
+          placeholder="Paste a URL (webpage, YouTube playlist, or SoundCloud playlist)…"
           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={loading}
         />
@@ -175,7 +175,7 @@ export default function FeedGeneratorPage() {
 
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">
-              Preview — {result.items.length} article{result.items.length !== 1 ? "s" : ""} found
+              Preview — {result.items.length} {result.feedType === 'youtube' ? 'video' : result.feedType === 'soundcloud' ? 'playlist' : 'article'}{result.items.length !== 1 && result.feedType !== 'soundcloud' ? 's' : ''} found
             </h3>
             <div className="flex gap-2">
               {!showSaveForm && (
@@ -233,7 +233,7 @@ export default function FeedGeneratorPage() {
 
           {/* Article list */}
           {result.items.length > 0 ? (
-            result.feedType === 'youtube' ? (
+            (result.feedType === 'youtube' || result.feedType === 'soundcloud') ? (
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden max-h-96 overflow-y-auto">
                 {result.items.map((item, i) => (
                   <div key={i} className={`flex gap-3 p-3 ${i > 0 ? 'border-t border-gray-100' : ''}`}>
