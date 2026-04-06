@@ -142,7 +142,9 @@ export const fetchRssSource = internalAction({
           const guid = item.guid ?? item.link ?? item.title ?? "";
           const linkStr = item.link ?? "";
           const isSC = linkStr.includes("soundcloud.com");
-          const isYT = !!item.videoId;
+          const isYT = !!item.videoId ||
+            linkStr.includes("youtube.com/watch") ||
+            linkStr.includes("youtu.be/");
 
           const mediaThumbnail = item.mediaThumbnail as
             | Record<string, unknown>
@@ -187,7 +189,11 @@ export const fetchRssSource = internalAction({
             description: item.contentSnippet ?? item.content ?? undefined,
             pubDate: item.pubDate ?? undefined,
             isoDate: item.isoDate ?? undefined,
-            schemaType: item.link?.includes("soundcloud.com") ? ("AudioObject" as const) : ("Article" as const),
+            schemaType: item.link?.includes("soundcloud.com")
+              ? ("AudioObject" as const)
+              : item.link?.includes("youtube.com/watch") || item.link?.includes("youtu.be/")
+                ? ("VideoObject" as const)
+                : ("Article" as const),
           };
         });
       }
